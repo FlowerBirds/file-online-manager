@@ -48,7 +48,7 @@ html时，系统能正确返回，html、png、js、css等静态文件位于stat
 - 文件上传：/api/manager/file/upload
 ----
 生成main方法，并实现上述功能。
-  
+
 ### 前端
 代码编写一个html页面，采用vue + element-ui框架实现，页面布局采用left+center布局。left部分中采用
 top+center布局，top里面实现一个工具栏，有一排按钮，高度20px，center部分中是一个树形结构，用来展示
@@ -71,3 +71,10 @@ top+center布局，top里面实现一个工具栏，有一排按钮，高度20px
 ### 部署YAML
 基于镜像manage:latest，编写一个在k8s中部署manage服务的yaml文件，其中映射出的访问端口为8080，挂载的文件夹分别
 是/app/apps、/app/file、/app/resource-home，挂载的目录均为本地路径，部署成功后，浏览器可访问其暴漏的8080端口访问系统并进行操作。
+
+
+
+
+
+## TODO list
+
