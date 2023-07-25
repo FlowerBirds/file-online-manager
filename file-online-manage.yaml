@@ -1,0 +1,76 @@
+ # 在k8s中部署file-manage服务
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-manage
+  labels:
+    app: file-manage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: file-manage
+  template:
+    metadata:
+      labels:
+        app: file-manage
+    spec:
+      containers:
+      - name: file-manage
+        image: file-manage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MANAGE_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: file-manage-secret
+                key: username
+          - name: MANAGE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: file-manage-secret
+                key: password
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: apps
+          mountPath: /app/apps
+        - name: file
+          mountPath: /app/file
+        - name: resource-home
+          mountPath: /app/resource-home
+      volumes:
+      - name: apps
+        hostPath:
+          path: /local/path/to/apps
+      - name: file
+        hostPath:
+          path: /local/path/to/file
+      - name: resource-home
+        hostPath:
+          path: /local/path/to/resource-home
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-manage
+  labels:
+    app: file-manage
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30001
+  selector:
+    app: file-manage
+
+---
+ apiVersion: v1
+ kind: Secret
+ metadata:
+   name: file-manage-secret
+ type: Opaque
+ data:
+   password: MTIzNDU2
+   username: YWRtaW4=
