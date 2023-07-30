@@ -20,7 +20,7 @@
                     </el-header>
                     <el-main>
                         <el-tree :data="treeData" @node-click="handleNodeClick" :props="defaultProps"
-                                 :load="loadNode"
+                                 :load="loadNode" ref="directoryTree" node-key="id"
                                  lazy></el-tree>
                     </el-main>
                 </el-aside>
@@ -40,6 +40,7 @@
                                 <el-button type="primary" size="small" icon="el-icon-delete" @click="deleteFile(scope.row)" title="删除"></el-button>
                                 <el-button type="primary" size="small" icon="el-icon-edit" @click="renameFile(scope.row)" title="重命名"></el-button>
                                 <el-button type="primary" size="small" icon="el-icon-document-copy" @click="copyFile(scope.row)" title="复制"></el-button>
+                                <el-button v-if="checkFileType(scope.row.name, ['.zip'])" type="primary" size="small" icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -80,6 +81,10 @@
                     this.currentPath = data.path
                     this.listFile(data.path)
                 },
+                /**
+                 * 删除文件
+                 * @param row
+                 */
                 deleteFile(row) {
                     let $this = this;
                     this.$confirm("是否删除文件：" + row.name, "确认").then(function (){
@@ -88,7 +93,7 @@
                             $this.listFile($this.currentPath)
                         }, response => {
                             console.log(response.body)
-                            this.$alert(response.body.message, '错误', {
+                            $this.$alert(response.body.message, '错误', {
                                 confirmButtonText: '确定',
                                 type: 'error'
                             })
@@ -172,10 +177,50 @@
                     };
                     input.click();
                 },
+                /**
+                 * 检测文件类型
+                 * @param fileName {String} 文件名称
+                 * @param fileType {Array} 文件类型
+                 * @returns {boolean} true：是指定类型，否：不是指定类型
+                 */
+                checkFileType(fileName, fileType) {
+                    if (!fileType) {
+                        fileType = ['.zip', '.rar', '.gz', '.tar', '.7z'];
+                    }
+                    const fileExtension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
+                    return fileType.includes(fileExtension);
+                },
+                /**
+                 * 解压文件
+                 * @param row 文件信息
+                 */
+                unzipFile(row) {
+                    let $this = this
+                    $this.$http.post('./api/manager/file/unzip', { path: row.path, name: row.name }).then(response => {
+                        var currentNode = $this.$refs.directoryTree.getCurrentNode();
+                        $this.loadNode({data: currentNode}, (data) => {
+                            $this.$refs.directoryTree.updateKeyChildren(currentNode.id, data);
+                        });
+                        $this.listFile($this.currentPath)
+                    }, response => {
+                        $this.$alert(response.body.message || response.body, '错误', {
+                            confirmButtonText: '确定',
+                            type: 'error'
+                        })
+                    })
+                },
 
+                /**
+                 * 删除文件夹，暂无使用
+                 */
                 deleteFolder() {
-                    this.$http.post('./api/manager/folder/delete', {}).then(response => {
-                        console.log(response.body)
+                    let $this = this;
+                    $this.$http.post('./api/manager/folder/delete', {}).then(response => {
+                        var currentNode = $this.$refs.directoryTree.getCurrentNode();
+                        $this.loadNode({data: currentNode}, (data) => {
+                            $this.$refs.directoryTree.updateKeyChildren(currentNode.id, data);
+                        });
+                        $this.listFile($this.currentPath)
                     }, response => {
                         console.log(response.body)
                     })
