@@ -79,8 +79,8 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/file/rename", renameFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/list", listFileHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/file/copy", copyFileHandler).Methods("POST")
-	router.HandleFunc(contextPath+"api/manager/file/upload", uploadFileHandler).Methods("POST") // Added upload file handler
-	//router.HandleFunc(contextPath+"api/manager/file/upload", uploadLagerFileHandler).Methods("POST", "GET") // Added upload file handler
+	router.HandleFunc(contextPath+"api/manager/file/upload", uploadFileHandler).Methods("POST")              // Added upload file handler
+	router.HandleFunc(contextPath+"api/manager/file/upload1", uploadLagerFileHandler).Methods("POST", "GET") // Added upload file handler
 	router.HandleFunc(contextPath+"api/manager/file/unzip", unzipFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/list", listFolderHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/folder/delete", deleteFolderHandler).Methods("DELETE")
@@ -132,18 +132,18 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type FileChunkParam struct {
-	ID               uint64         `json:"id"`
-	ChunkNumber      int            `json:"chunkNumber"`
-	ChunkSize        float32        `json:"chunkSize"`
-	CurrentChunkSize float32        `json:"currentChunkSize"`
-	TotalChunks      int            `json:"totalChunks"`
-	TotalSize        float64        `json:"totalSize"`
-	Identifier       string         `json:"identifier"`
-	Filename         string         `json:"filename"`
-	RelativePath     string         `json:"relativePath"`
-	Createtime       time.Time      `json:"createtime"`
-	Updatetime       time.Time      `json:"updatetime"`
-	File             multipart.File `json:"file"`
+	//ID               uint64  `json:"id"`
+	ChunkNumber      int     `json:"chunkNumber"`
+	ChunkSize        float32 `json:"chunkSize"`
+	CurrentChunkSize float32 `json:"currentChunkSize"`
+	TotalChunks      int     `json:"totalChunks"`
+	TotalSize        float64 `json:"totalSize"`
+	Identifier       string  `json:"identifier"`
+	Filename         string  `json:"filename"`
+	RelativePath     string  `json:"relativePath"`
+	//Createtime       time.Time      `json:"createtime"`
+	//Updatetime       time.Time      `json:"updatetime"`
+	File multipart.File `json:"file"`
 }
 
 func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -153,29 +153,9 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	// 接收路径
-	query := r.URL.Query()
-	path := query.Get("path")
-
-	// 接收其他参数
-	chunkNumber := query.Get("chunkNumber")
-	chunkSize := query.Get("chunkSize")
-	currentChunkSize := query.Get("currentChunkSize")
-	totalChunks := query.Get("totalChunks")
-	totalSize := query.Get("totalSize")
-	identifier := query.Get("identifier")
-	filename := query.Get("filename")
-	relativePath := query.Get("relativePath")
-
-	chunkNumberTmp, _ := strconv.Atoi(chunkNumber)
-	chunkSizeTmp, _ := strconv.ParseFloat(chunkSize, 32)
-	CurrentChunkSizeTmp, _ := strconv.ParseFloat(currentChunkSize, 32)
-	totalChunksTmp, _ := strconv.Atoi(totalChunks)
-	totalSizeTmp, _ := strconv.ParseFloat(totalSize, 32)
-	fileChunkParam := FileChunkParam{ChunkNumber: chunkNumberTmp, ChunkSize: float32(chunkSizeTmp), CurrentChunkSize: float32(CurrentChunkSizeTmp), TotalChunks: totalChunksTmp,
-		TotalSize: totalSizeTmp, Identifier: identifier, Filename: filename, RelativePath: relativePath}
 
 	if r.Method == "GET" {
+		// 全部默认上传
 		response := Response{Code: 200, Message: "上传校验", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -183,6 +163,17 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	} else if r.Method == "POST" {
+		// 接收路径
+		path := r.FormValue("path")
+		// 接收其他参数
+		chunkNumber, _ := strconv.Atoi(r.FormValue("chunkNumber"))
+		chunkSize, _ := strconv.ParseFloat(r.FormValue("chunkSize"), 32)
+		currentChunkSize, _ := strconv.ParseFloat(r.FormValue("currentChunkSize"), 32)
+		totalChunks, _ := strconv.Atoi(r.FormValue("totalChunks"))
+		totalSize, _ := strconv.ParseFloat(r.FormValue("totalSize"), 32)
+		fileChunkParam := FileChunkParam{ChunkNumber: chunkNumber, ChunkSize: float32(chunkSize), CurrentChunkSize: float32(currentChunkSize), TotalChunks: totalChunks,
+			TotalSize: totalSize, Identifier: r.FormValue("identifier"), Filename: r.FormValue("filename"), RelativePath: r.FormValue("relativePath")}
+		// 接收file
 		file, _, err := r.FormFile("file")
 		defer file.Close()
 		if err != nil {
@@ -194,15 +185,12 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fileChunkParam.File = file
-		if path == "." {
-			path = root
-		}
-		fullFileName := path + string(os.PathSeparator) + filename
+		fullFileName := path + string(os.PathSeparator) + fileChunkParam.Filename
 		saveStatus := false
-		if totalChunks == string(1) {
+		if fileChunkParam.TotalChunks == 1 {
 			saveStatus = uploadSingleFile(fullFileName, fileChunkParam)
 		} else {
-			uploadFileByRandomAccessFile(fullFileName, fileChunkParam)
+			saveStatus = uploadFileByRandomAccessFile(fullFileName, fileChunkParam)
 		}
 
 		if saveStatus {
@@ -221,23 +209,6 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	//f, err := os.OpenFile(path+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	//if err != nil {
-	//	response := Response{Code: 500, Message: "Failed to upload file", Data: nil}
-	//	jsonResponse, _ := json.Marshal(response)
-	//	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	//	w.WriteHeader(http.StatusInternalServerError)
-	//	w.Write(jsonResponse)
-	//	return
-	//}
-	//defer f.Close()
-	//io.Copy(f, file)
-	//response := Response{Code: 200, Message: "File uploaded successfully", Data: nil}
-	//jsonResponse, _ := json.Marshal(response)
-	//w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	//w.WriteHeader(http.StatusOK)
-	//w.Write(jsonResponse)
 }
 
 func uploadSingleFile(resultFileName string, param FileChunkParam) bool {
