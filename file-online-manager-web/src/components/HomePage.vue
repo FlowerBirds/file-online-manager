@@ -39,10 +39,19 @@
                 </el-table>
             </el-main>
         </el-container>
+        <el-dialog title="提示" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
+            <Test :currentPath="currentPath"></Test>
+            <span>这是一段信息</span>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="dialogVisible = false">取 消</el-button>
+                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+            </span>
+        </el-dialog>
     </div>
 </template>
 
 <script>
+    import Test from './test.vue';
     // import {
     //     reject
     // } from 'core-js/fn/promise'
@@ -56,19 +65,27 @@
                 defaultProps: {
                     label: 'name'
                 },
-                currentPath: '.'
+                currentPath: '.',
+                dialogVisible: false
             }
         },
         props: {
 
         },
         components: {
-
+            Test
         },
         mounted() {
             this.listFile('')
         },
         methods: {
+            handleClose(done) {
+                this.$confirm('确认关闭？')
+                    .then(() => {
+                        done();
+                    })
+                    .catch(() => {});
+            },
             loadNode(node, resolve) {
                 let path = node.data.path
                 if (!path) {
@@ -163,6 +180,7 @@
                 });
             },
             uploadFile() {
+                // this.dialogVisible = true;
                 let input = document.createElement('input');
                 input.type = 'file';
                 input.onchange = () => {
@@ -305,6 +323,7 @@
     .current-path {
         color: chocolate;
     }
+
     .el-main {
         margin-left: 20px;
     }

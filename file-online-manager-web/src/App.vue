@@ -2,11 +2,15 @@
     <div id="app">
         <!-- <img alt="Vue logo" src="./assets/logo.png"> -->
         <HomePage></HomePage>
+        <!-- <Test></Test> -->
+        <!-- <LargeFileUpload></LargeFileUpload> -->
     </div>
 </template>
 
 <script>
     import HomePage from './components/HomePage.vue';
+    // import Test from './components/test.vue';
+    // import LargeFileUpload from "./components/LargeFileUpload.vue";
 
     export default {
         name: 'App',
@@ -18,7 +22,9 @@
             }
         },
         components: {
-            HomePage
+            HomePage,
+            // Test,
+            // LargeFileUpload
         }
     }
 </script>

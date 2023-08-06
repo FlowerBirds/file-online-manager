@@ -9,6 +9,7 @@ import (
 	"golang.org/x/text/transform"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -79,6 +80,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/file/list", listFileHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/file/copy", copyFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/upload", uploadFileHandler).Methods("POST") // Added upload file handler
+	//router.HandleFunc(contextPath+"api/manager/file/upload", uploadLagerFileHandler).Methods("POST", "GET") // Added upload file handler
 	router.HandleFunc(contextPath+"api/manager/file/unzip", unzipFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/list", listFolderHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/folder/delete", deleteFolderHandler).Methods("DELETE")
@@ -127,6 +129,161 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
+}
+
+type FileChunkParam struct {
+	ID               uint64         `json:"id"`
+	ChunkNumber      int            `json:"chunkNumber"`
+	ChunkSize        float32        `json:"chunkSize"`
+	CurrentChunkSize float32        `json:"currentChunkSize"`
+	TotalChunks      int            `json:"totalChunks"`
+	TotalSize        float64        `json:"totalSize"`
+	Identifier       string         `json:"identifier"`
+	Filename         string         `json:"filename"`
+	RelativePath     string         `json:"relativePath"`
+	Createtime       time.Time      `json:"createtime"`
+	Updatetime       time.Time      `json:"updatetime"`
+	File             multipart.File `json:"file"`
+}
+
+func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
+	username, password, ok := r.BasicAuth()
+	if !ok || !checkAuth(username, password) {
+		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	// 接收路径
+	query := r.URL.Query()
+	path := query.Get("path")
+
+	// 接收其他参数
+	chunkNumber := query.Get("chunkNumber")
+	chunkSize := query.Get("chunkSize")
+	currentChunkSize := query.Get("currentChunkSize")
+	totalChunks := query.Get("totalChunks")
+	totalSize := query.Get("totalSize")
+	identifier := query.Get("identifier")
+	filename := query.Get("filename")
+	relativePath := query.Get("relativePath")
+
+	chunkNumberTmp, _ := strconv.Atoi(chunkNumber)
+	chunkSizeTmp, _ := strconv.ParseFloat(chunkSize, 32)
+	CurrentChunkSizeTmp, _ := strconv.ParseFloat(currentChunkSize, 32)
+	totalChunksTmp, _ := strconv.Atoi(totalChunks)
+	totalSizeTmp, _ := strconv.ParseFloat(totalSize, 32)
+	fileChunkParam := FileChunkParam{ChunkNumber: chunkNumberTmp, ChunkSize: float32(chunkSizeTmp), CurrentChunkSize: float32(CurrentChunkSizeTmp), TotalChunks: totalChunksTmp,
+		TotalSize: totalSizeTmp, Identifier: identifier, Filename: filename, RelativePath: relativePath}
+
+	if r.Method == "GET" {
+		response := Response{Code: 200, Message: "上传校验", Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsonResponse)
+		return
+	} else if r.Method == "POST" {
+		file, _, err := r.FormFile("file")
+		defer file.Close()
+		if err != nil {
+			response := Response{Code: 400, Message: "Failed to get file", Data: nil}
+			jsonResponse, _ := json.Marshal(response)
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(jsonResponse)
+			return
+		}
+		fileChunkParam.File = file
+		if path == "." {
+			path = root
+		}
+		fullFileName := path + string(os.PathSeparator) + filename
+		saveStatus := false
+		if totalChunks == string(1) {
+			saveStatus = uploadSingleFile(fullFileName, fileChunkParam)
+		} else {
+			uploadFileByRandomAccessFile(fullFileName, fileChunkParam)
+		}
+
+		if saveStatus {
+			fmt.Println("上传成功")
+			response := Response{Code: 200, Message: "File uploaded successfully", Data: nil}
+			jsonResponse, _ := json.Marshal(response)
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write(jsonResponse)
+		} else {
+			response := Response{Code: 500, Message: "Failed to upload file", Data: nil}
+			jsonResponse, _ := json.Marshal(response)
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(jsonResponse)
+			return
+		}
+	}
+
+	//f, err := os.OpenFile(path+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	//if err != nil {
+	//	response := Response{Code: 500, Message: "Failed to upload file", Data: nil}
+	//	jsonResponse, _ := json.Marshal(response)
+	//	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	w.Write(jsonResponse)
+	//	return
+	//}
+	//defer f.Close()
+	//io.Copy(f, file)
+	//response := Response{Code: 200, Message: "File uploaded successfully", Data: nil}
+	//jsonResponse, _ := json.Marshal(response)
+	//w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	//w.WriteHeader(http.StatusOK)
+	//w.Write(jsonResponse)
+}
+
+func uploadSingleFile(resultFileName string, param FileChunkParam) bool {
+	saveFile, err := os.Create(resultFileName)
+	defer saveFile.Close()
+	if err != nil {
+		fmt.Println("文件上传失败：", err)
+		return false
+	}
+
+	_, err = io.Copy(saveFile, param.File)
+	if err != nil {
+		fmt.Println("文件上传失败：", err)
+		return false
+	}
+
+	return true
+}
+
+func uploadFileByRandomAccessFile(resultFileName string, param FileChunkParam) bool {
+	randomAccessFile, err := os.OpenFile(resultFileName, os.O_RDWR|os.O_CREATE, 0666)
+	defer randomAccessFile.Close()
+	if err != nil {
+		fmt.Println("文件上传失败：", err)
+		return false
+	}
+
+	chunkSize := param.ChunkSize
+	if chunkSize == 0 {
+		chunkSize = 1024 * 1024
+	}
+	offset := int64(chunkSize * float32(param.ChunkNumber-1))
+
+	_, err = randomAccessFile.Seek(offset, 0)
+	if err != nil {
+		fmt.Println("文件上传失败：", err)
+		return false
+	}
+
+	_, err = io.Copy(randomAccessFile, param.File)
+	if err != nil {
+		fmt.Println("文件上传失败：", err)
+		return false
+	}
+
+	return true
 }
 
 func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
