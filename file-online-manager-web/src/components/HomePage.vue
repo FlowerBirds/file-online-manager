@@ -40,7 +40,7 @@
             </el-main>
         </el-container>
         <el-dialog title="提示" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
-            <Test :currentPath="currentPath"></Test>
+            <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
             <span>这是一段信息</span>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取 消</el-button>
@@ -51,10 +51,7 @@
 </template>
 
 <script>
-    import Test from './test.vue';
-    // import {
-    //     reject
-    // } from 'core-js/fn/promise'
+    import LargeFileUpload from './LargeFileUpload.vue';
 
     export default {
         name: 'HomePage',
@@ -73,7 +70,7 @@
 
         },
         components: {
-            Test
+            LargeFileUpload
         },
         mounted() {
             this.listFile('')
@@ -180,32 +177,32 @@
                 });
             },
             uploadFile() {
-                // this.dialogVisible = true;
-                let input = document.createElement('input');
-                input.type = 'file';
-                input.onchange = () => {
-                    let file = input.files[0];
-                    let formData = new FormData();
-                    formData.append('file', file);
-                    formData.append('path', this.currentPath);
-                    let loadingInstance = this.$loading({
-                        lock: true,
-                        text: '文件上传中...',
-                        spinner: 'el-icon-loading',
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        target: document.querySelector('#app')
-                    });
-                    this.$http.post('./api/manager/file/upload', formData).then(response => {
-                        console.log(response.body)
-                        loadingInstance.close();
-                        this.listFile(this.currentPath)
-                    }, response => {
-                        console.log(response.body)
-                        loadingInstance.close();
-                        this.listFile(this.currentPath)
-                    })
-                };
-                input.click();
+                this.dialogVisible = true;
+                // let input = document.createElement('input');
+                // input.type = 'file';
+                // input.onchange = () => {
+                //     let file = input.files[0];
+                //     let formData = new FormData();
+                //     formData.append('file', file);
+                //     formData.append('path', this.currentPath);
+                //     let loadingInstance = this.$loading({
+                //         lock: true,
+                //         text: '文件上传中...',
+                //         spinner: 'el-icon-loading',
+                //         background: 'rgba(0, 0, 0, 0.7)',
+                //         target: document.querySelector('#app')
+                //     });
+                //     this.$http.post('./api/manager/file/upload', formData).then(response => {
+                //         console.log(response.body)
+                //         loadingInstance.close();
+                //         this.listFile(this.currentPath)
+                //     }, response => {
+                //         console.log(response.body)
+                //         loadingInstance.close();
+                //         this.listFile(this.currentPath)
+                //     })
+                // };
+                // input.click();
             },
             /**
              * 检测文件类型
