@@ -39,9 +39,8 @@
                 </el-table>
             </el-main>
         </el-container>
-        <el-dialog title="提示" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
+        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
             <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
-            <span>这是一段信息</span>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取 消</el-button>
                 <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
