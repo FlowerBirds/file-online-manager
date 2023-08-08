@@ -47,6 +47,7 @@
 
 <script>
     import SparkMD5 from "spark-md5";
+    import { v4 as uuidv4 } from 'uuid';
     // const FILE_UPLOAD_ID_KEY = "file_upload_id";
     // 分片大小，20MB
     const CHUNK_SIZE = 20 * 1024 * 1024;
@@ -93,6 +94,9 @@
                             .replace(/\sminutes?/, "分钟")
                             .replace(/\sseconds?/, "秒");
                     },
+                    generateUniqueIdentifier: function() {
+                      return uuidv4();
+                    }
                 },
                 // 修改上传状态
                 fileStatusTextObj: {
@@ -134,6 +138,9 @@
                         // 恢复上传
                         file.resume();
                     }
+                });
+                this.$nextTick(() => {
+                  file.resume();
                 });
             },
             onFileSuccess(rootFile, file, response, chunk) {
