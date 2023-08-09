@@ -9,6 +9,14 @@ COPY main.go main.go
 
 RUN go build -o manage
 
+# FROM node:16-alpine as build-vue
+# WORKDIR /app
+# COPY file-online-manager-web /app/file-online-manager-web
+# COPY static /app/static
+# WORKDIR /app/file-online-manager-web/
+# RUN npm install --registry=https://registry.npm.taobao.org
+# RUN npm run build
+
 FROM alpine:3.17 as ship
 WORKDIR /home/app
 COPY --from=build /app/manage .
