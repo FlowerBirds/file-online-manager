@@ -1,18 +1,16 @@
 package main
 
 import (
-	"archive/zip"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -453,6 +451,32 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
+func executeCommand(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+
+	// 创建管道用于获取命令输出
+	//pipeReader, pipeWriter := io.Pipe()
+	//cmd.Stderr = os.Stderr
+	//cmd.Stdout = pipeWriter
+
+	// 开启协程读取命令输出并打印
+	//go func() {
+	//	defer pipeReader.Close()
+	//	scanner := bufio.NewScanner(pipeReader)
+	//	for scanner.Scan() {
+	//		fmt.Println(scanner.Text())
+	//	}
+	//}()
+
+	// 执行命令
+	err := cmd.Run()
+	//pipeWriter.Close()
+	//if err != nil {
+	//	return fmt.Errorf("执行命令失败：%v", err)
+	//}
+	return err
+}
+
 func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 	username, password, ok := r.BasicAuth()
 	if !ok || !checkAuth(username, password) {
@@ -486,55 +510,19 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
-	zipReader, err := zip.OpenReader(filePath)
-	defer zipReader.Close()
-	if err != nil {
-		http.Error(w, "Failed to open zip file", http.StatusInternalServerError)
+	var cmdErr error = nil
+	if strings.HasSuffix(fileName, ".zip") {
+		cmdErr = executeCommand("unzip", filePath)
+	} else if strings.HasSuffix(fileName, ".tar.gz") {
+		cmdErr = executeCommand("tar", "-xzf", filePath)
+	} else if strings.HasSuffix(fileName, ".tar") {
+		cmdErr = executeCommand("tar", "-xf", filePath)
+	}
+	if cmdErr != nil {
+		http.Error(w, cmdErr.Error(), http.StatusBadRequest)
+		log.Println("unzip failed", err)
 		return
 	}
-
-	for _, file := range zipReader.File {
-		fileReader, err := file.Open()
-		defer fileReader.Close()
-		if err != nil {
-			http.Error(w, "Failed to open file in zip", http.StatusInternalServerError)
-			return
-		}
-
-		// 创建目标文件
-		gbkDecoder := simplifiedchinese.GBK.NewDecoder()
-
-		utf8String, _, err := transform.String(gbkDecoder, file.Name)
-		if err != nil {
-			fmt.Println("Error decoding GBK string:", err)
-			return
-		}
-		targetFilePath := path.Join(".", path.Dir(filePath), utf8String)
-		err = os.MkdirAll(path.Dir(targetFilePath), 0755)
-		if err != nil {
-			http.Error(w, "Failed to open file in zip", http.StatusInternalServerError)
-			return
-		}
-		targetFile, err := os.Create(targetFilePath)
-		defer targetFile.Close()
-		if err != nil {
-			http.Error(w, "Failed to create target file", http.StatusInternalServerError)
-			return
-		}
-
-		// 将压缩包中文件的内容复制到目标文件
-		_, err = io.Copy(targetFile, fileReader)
-		if err != nil {
-			http.Error(w, "Failed to unzip file from zip", http.StatusInternalServerError)
-			return
-		}
-
-		// 解压成功，可以根据需要返回一些响应，如成功消息
-		//w.Write([]byte("File unzip successfully"))
-		//return
-	}
-
-	//copyFile(filePath, newPath)
 
 	response := Response{Code: 200, Message: "File unzip successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)

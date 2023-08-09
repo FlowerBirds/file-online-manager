@@ -32,7 +32,7 @@
                                 title="重命名"></el-button>
                             <el-button type="primary" size="small" icon="el-icon-document-copy"
                                 @click="copyFile(scope.row)" title="复制"></el-button>
-                            <el-button v-if="checkFileType(scope.row.name, ['.zip'])" type="primary" size="small"
+                            <el-button v-if="checkFileType(scope.row.name)" type="primary" size="small"
                                 icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
                         </template>
                     </el-table-column>
@@ -211,7 +211,7 @@
              */
             checkFileType(fileName, fileType) {
                 if (!fileType) {
-                    fileType = ['.zip', '.rar', '.gz', '.tar', '.7z'];
+                    fileType = ['.zip', '.tar.gz', '.tar'];
                 }
                 const fileExtension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
                 return fileType.includes(fileExtension);
@@ -234,7 +234,7 @@
                     });
                     $this.listFile($this.currentPath)
                 }).catch(error => {
-                    $this.$alert(error.body.message || error.body, '错误', {
+                    $this.$alert(error.response.data || error.code, '错误', {
                         confirmButtonText: '确定',
                         type: 'error'
                     })
