@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"file-online-manager/handler"
 	"file-online-manager/model"
+	"file-online-manager/util"
 	"fmt"
 	"github.com/gorilla/mux"
 	"io"
@@ -17,9 +18,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var root = "."
+var loginUsername = ""
+var loginPassword = ""
 
 func main() {
 	router := mux.NewRouter()
@@ -40,9 +44,10 @@ func main() {
 			return
 		}
 	}
-	fmt.Println("server manage root path: " + root)
-	fmt.Println("server use context path: " + contextPath)
+	log.Println("server manage root path: " + root)
+	log.Println("server use context path: " + contextPath)
 
+	initAuth()
 	// 增加拦截器
 	router.Use(accessLogMiddleware, authenticationMiddleware)
 
@@ -59,8 +64,45 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/folder/copy", copyFolderHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/create", createFolderHandler).Methods("POST")
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
-	fmt.Println("server started at port 8080")
+	log.Println("server started at port 8080")
 	http.ListenAndServe(":8080", router)
+}
+
+/**
+ * 根据设置的策略，进行认证初始化
+ */
+func initAuth() {
+	manageUsername := os.Getenv("MANAGE_USERNAME")
+	managePassword := os.Getenv("MANAGE_PASSWORD")
+	manageSecurity := os.Getenv("MANAGE_SECURITY")
+	if manageUsername == "" || manageSecurity == "true" || manageSecurity == "" {
+		loginUsername = util.GenToken(32)
+		log.Println("use security user: " + loginUsername)
+	} else {
+		loginUsername = manageUsername
+	}
+	if managePassword == "" || manageSecurity == "true" || manageSecurity == "" {
+		loginPassword = util.GenToken(128)
+		log.Println("use security token: " + loginPassword)
+	} else {
+		loginPassword = managePassword
+	}
+	if manageSecurity == "true" || manageSecurity == "" {
+		log.Println("use security mode, user token will be update per day.")
+		ticker := time.NewTicker(24 * time.Hour)
+		go func() {
+			for {
+				select {
+				case <-ticker.C:
+					// 更新token
+					loginUsername = util.GenToken(32)
+					log.Println("use security user: " + loginUsername)
+					loginPassword = util.GenToken(128)
+					log.Println("use security token: " + loginPassword)
+				}
+			}
+		}()
+	}
 }
 
 func authenticationMiddleware(next http.Handler) http.Handler {
@@ -572,12 +614,10 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 
 // 从环境变量中获取用户名和密码
 func checkAuth(username string, password string) bool {
-	manageUsername := os.Getenv("MANAGE_USERNAME")
-	managePassword := os.Getenv("MANAGE_PASSWORD")
-	if manageUsername == "" || managePassword == "" {
+	if username == "" || password == "" {
 		return false
 	}
-	return username == manageUsername && password == managePassword
+	return username == loginUsername && password == loginPassword
 }
 
 func copyFile(src string, dst string) error {
