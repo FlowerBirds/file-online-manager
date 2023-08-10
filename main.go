@@ -75,7 +75,7 @@ func main() {
 	fmt.Println("server use context path: " + contextPath)
 
 	// 增加拦截器
-	router.Use(authenticationMiddleware)
+	router.Use(accessLogMiddleware, authenticationMiddleware)
 
 	router.HandleFunc(contextPath+"api/manager/file/delete", deleteFileHandler).Methods("DELETE")
 	router.HandleFunc(contextPath+"api/manager/file/rename", renameFileHandler).Methods("POST")
@@ -103,6 +103,16 @@ func authenticationMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
+
+		// 继续执行下一个处理函数
+		next.ServeHTTP(w, r)
+	})
+}
+
+func accessLogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		uri := r.URL.Path
+		log.Println("access uri:", uri)
 
 		// 继续执行下一个处理函数
 		next.ServeHTTP(w, r)
