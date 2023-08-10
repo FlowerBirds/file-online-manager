@@ -73,13 +73,13 @@ top+center布局，top里面实现一个工具栏，有一排按钮，高度20px
 是/app/apps、/app/file、/app/resource-home，挂载的目录均为本地路径，部署成功后，浏览器可访问其暴漏的8080端口访问系统并进行操作。
 
 
-### 安全模式
-当设置环境变量MANAGE_SECURITY值为true或者不设置（默认）时，则开启安全模式，该模式下登录凭证每月更新一次，为随机值，需从服务日志中获取。
+## 安全模式
+当设置环境变量`MANAGE_SECURITY`值为true或者不设置（默认）时，则开启安全模式，该模式下登录凭证每月更新一次，为随机值，需从服务日志中获取。
 ```bash
 export MANAGE_SECURITY=true
 ```
 
-当设置MANAGE_SECURITY为false时，禁用自动更新，通过设置MANAGE_USERNAME和MANAGE_PASSWORD来指定登录凭证。
+当设置MANAGE_SECURITY为false时，禁用自动更新，通过设置`MANAGE_USERNAME`和`MANAGE_PASSWORD`来指定登录凭证。
 ```bash
 export MANAGE_SECURITY=false
 export MANAGE_USERNAME=admin
