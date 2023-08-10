@@ -89,7 +89,7 @@ func initAuth() {
 	}
 	if manageSecurity == "true" || manageSecurity == "" {
 		log.Println("use security mode, user token will be update per day.")
-		ticker := time.NewTicker(24 * time.Hour)
+		ticker := time.NewTicker(20 * time.Minute)
 		go func() {
 			for {
 				select {
