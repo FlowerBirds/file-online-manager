@@ -73,6 +73,10 @@ func main() {
 	}
 	fmt.Println("server manage root path: " + root)
 	fmt.Println("server use context path: " + contextPath)
+
+	// 增加拦截器
+	router.Use(authenticationMiddleware)
+
 	router.HandleFunc(contextPath+"api/manager/file/delete", deleteFileHandler).Methods("DELETE")
 	router.HandleFunc(contextPath+"api/manager/file/rename", renameFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/list", listFileHandler).Methods("GET")
@@ -90,13 +94,23 @@ func main() {
 	http.ListenAndServe(":8080", router)
 }
 
+func authenticationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 在每个请求之前进行身份验证
+		username, password, ok := r.BasicAuth()
+		if !ok || !checkAuth(username, password) {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// 继续执行下一个处理函数
+		next.ServeHTTP(w, r)
+	})
+}
+
 func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	file, handler, err := r.FormFile("file")
 	path := r.FormValue("path")
 	if err != nil {
@@ -145,12 +159,6 @@ type FileChunkParam struct {
 }
 
 func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 
 	if r.Method == "GET" {
 		// 全部默认上传
@@ -256,12 +264,7 @@ func uploadFileByRandomAccessFile(resultFileName string, param FileChunkParam) b
 }
 
 func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	filePath := r.FormValue("path")
 	if filePath == "" {
 		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
@@ -289,12 +292,7 @@ func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func renameFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	// 请求类型为application/json中获取参数，而不是form表单
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -337,12 +335,7 @@ func renameFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	files := []File{}
 	path := r.FormValue("path")
 	if len(path) == 0 {
@@ -380,12 +373,7 @@ func listFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func copyFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	// 请求类型为application/json中获取参数，而不是form表单
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -452,38 +440,17 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func executeCommand(command string, args ...string) error {
+	log.Println(command, args)
 	cmd := exec.Command(command, args...)
-
-	// 创建管道用于获取命令输出
-	//pipeReader, pipeWriter := io.Pipe()
-	//cmd.Stderr = os.Stderr
-	//cmd.Stdout = pipeWriter
-
-	// 开启协程读取命令输出并打印
-	//go func() {
-	//	defer pipeReader.Close()
-	//	scanner := bufio.NewScanner(pipeReader)
-	//	for scanner.Scan() {
-	//		fmt.Println(scanner.Text())
-	//	}
-	//}()
 
 	// 执行命令
 	err := cmd.Run()
-	//pipeWriter.Close()
-	//if err != nil {
-	//	return fmt.Errorf("执行命令失败：%v", err)
-	//}
+
 	return err
 }
 
 func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	// 请求类型为application/json中获取参数，而不是form表单
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -510,17 +477,19 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
+	// 获取文件所在的目录，并解压到当前目录
+	dir := filepath.Dir(filePath)
 	var cmdErr error = nil
 	if strings.HasSuffix(fileName, ".zip") {
-		cmdErr = executeCommand("unzip", filePath)
+		cmdErr = executeCommand("unzip", filePath, "-d", dir)
 	} else if strings.HasSuffix(fileName, ".tar.gz") {
-		cmdErr = executeCommand("tar", "-xzf", filePath)
+		cmdErr = executeCommand("tar", "-xzf", filePath, "-C", dir)
 	} else if strings.HasSuffix(fileName, ".tar") {
-		cmdErr = executeCommand("tar", "-xf", filePath)
+		cmdErr = executeCommand("tar", "-xf", filePath, "-C", dir)
 	}
 	if cmdErr != nil {
 		http.Error(w, cmdErr.Error(), http.StatusBadRequest)
-		log.Println("unzip failed", err)
+		log.Println("unzip failed", cmdErr)
 		return
 	}
 
@@ -532,12 +501,7 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listFolderHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	folders := []File{}
 	path := r.FormValue("path")
 	if len(path) == 0 {
@@ -565,12 +529,7 @@ func listFolderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteFolderHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	folderPath := r.FormValue("path")
 	if folderPath == "" {
 		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
@@ -597,12 +556,7 @@ func deleteFolderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func renameFolderHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	folderPath := r.FormValue("path")
 	newName := r.FormValue("new_name")
 	if folderPath == "" || newName == "" {
@@ -630,12 +584,7 @@ func renameFolderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	filePath := r.FormValue("path")
 	copyName := r.FormValue("name")
 	if filePath == "" || copyName == "" {
@@ -726,12 +675,7 @@ func copyFile(src string, dst string) error {
 }
 
 func createFolderHandler(w http.ResponseWriter, r *http.Request) {
-	username, password, ok := r.BasicAuth()
-	if !ok || !checkAuth(username, password) {
-		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+
 	folderPath := r.FormValue("path")
 	if folderPath == "" || folderPath == "." || folderPath == "/" {
 		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
