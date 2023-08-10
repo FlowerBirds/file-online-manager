@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"file-online-manager/handler"
+	"file-online-manager/model"
 	"fmt"
 	"github.com/gorilla/mux"
 	"io"
@@ -17,38 +19,6 @@ import (
 	"strings"
 	"time"
 )
-
-type File struct {
-	Name    string    `json:"name"`
-	Path    string    `json:"path"`
-	IsDir   bool      `json:"isDir"`
-	Size    int64     `json:"size"`
-	ModTime time.Time `json:"modTime"`
-	Id      string    `json:"id"`
-}
-
-func (f *File) MarshalJSON() ([]byte, error) {
-	type Alias File // 创建一个别名类型，以便访问原始 File 结构体的字段
-
-	return json.Marshal(&struct {
-		*Alias
-		ModTime string `json:"modTime"`
-	}{
-		Alias:   (*Alias)(f),
-		ModTime: f.ModTime.Format("2006-01-02 15:04:05"),
-	})
-}
-
-type Response struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
-type RequestFileData struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-}
 
 var root = "."
 
@@ -78,7 +48,7 @@ func main() {
 	router.Use(accessLogMiddleware, authenticationMiddleware)
 
 	router.HandleFunc(contextPath+"api/manager/file/delete", deleteFileHandler).Methods("DELETE")
-	router.HandleFunc(contextPath+"api/manager/file/rename", renameFileHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/file/rename", handler.RenameFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/list", listFileHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/file/copy", copyFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/upload", uploadFileHandler).Methods("POST")              // Added upload file handler
@@ -124,7 +94,7 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	file, handler, err := r.FormFile("file")
 	path := r.FormValue("path")
 	if err != nil {
-		response := Response{Code: 400, Message: "Failed to get file", Data: nil}
+		response := model.Response{Code: 400, Message: "Failed to get file", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -137,7 +107,7 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	f, err := os.OpenFile(path+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
-		response := Response{Code: 500, Message: "Failed to upload file", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to upload file", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -146,7 +116,7 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 	io.Copy(f, file)
-	response := Response{Code: 200, Message: "File uploaded successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "File uploaded successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -172,7 +142,7 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		// 全部默认上传
-		response := Response{Code: 200, Message: "上传校验", Data: nil}
+		response := model.Response{Code: 200, Message: "上传校验", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -193,7 +163,7 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 		file, _, err := r.FormFile("file")
 		defer file.Close()
 		if err != nil {
-			response := Response{Code: 400, Message: "Failed to get file", Data: nil}
+			response := model.Response{Code: 400, Message: "Failed to get file", Data: nil}
 			jsonResponse, _ := json.Marshal(response)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
@@ -211,13 +181,13 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 
 		if saveStatus {
 			fmt.Println("上传成功")
-			response := Response{Code: 200, Message: "File uploaded successfully", Data: nil}
+			response := model.Response{Code: 200, Message: "File uploaded successfully", Data: nil}
 			jsonResponse, _ := json.Marshal(response)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
 			w.Write(jsonResponse)
 		} else {
-			response := Response{Code: 500, Message: "Failed to upload file", Data: nil}
+			response := model.Response{Code: 500, Message: "Failed to upload file", Data: nil}
 			jsonResponse, _ := json.Marshal(response)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -277,7 +247,7 @@ func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	filePath := r.FormValue("path")
 	if filePath == "" {
-		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -287,57 +257,14 @@ func deleteFileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("remove file: " + filePath)
 	err := os.Remove(filePath)
 	if err != nil {
-		response := Response{Code: 500, Message: "Failed to delete file", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to delete file", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(jsonResponse)
 		return
 	}
-	response := Response{Code: 200, Message: "File deleted successfully", Data: nil}
-	jsonResponse, _ := json.Marshal(response)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResponse)
-}
-
-func renameFileHandler(w http.ResponseWriter, r *http.Request) {
-
-	// 请求类型为application/json中获取参数，而不是form表单
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Bad request body", http.StatusBadRequest)
-		return
-	}
-	var requestData RequestFileData
-	err = json.Unmarshal(body, &requestData)
-	if err != nil {
-		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
-		return
-	}
-	filePath := requestData.Path
-	newName := requestData.Name
-
-	if filePath == "" || newName == "" {
-		response := Response{Code: 400, Message: "Missing path or new_name parameter", Data: nil}
-		jsonResponse, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(jsonResponse)
-		return
-	}
-	dir := filepath.Dir(filePath)
-	newFilePath := dir + "/" + newName
-	err = os.Rename(filePath, newFilePath)
-	if err != nil {
-		response := Response{Code: 500, Message: "Failed to rename file", Data: nil}
-		jsonResponse, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(jsonResponse)
-		return
-	}
-	response := Response{Code: 200, Message: "File renamed successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "File deleted successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -346,7 +273,7 @@ func renameFileHandler(w http.ResponseWriter, r *http.Request) {
 
 func listFileHandler(w http.ResponseWriter, r *http.Request) {
 
-	files := []File{}
+	files := []model.File{}
 	path := r.FormValue("path")
 	if len(path) == 0 {
 		path = root
@@ -357,7 +284,7 @@ func listFileHandler(w http.ResponseWriter, r *http.Request) {
 	dir, err := ioutil.ReadDir(path)
 	if err != nil {
 		fmt.Println(err)
-		response := Response{Code: 500, Message: "Failed to list files", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to list files", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -370,12 +297,12 @@ func listFileHandler(w http.ResponseWriter, r *http.Request) {
 			size = file.Size()
 		}
 
-		files = append(files, File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(), Size: size, ModTime: file.ModTime()})
+		files = append(files, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(), Size: size, ModTime: file.ModTime()})
 		sort.Slice(files, func(i, j int) bool {
 			return files[i].IsDir
 		})
 	}
-	response := Response{Code: 200, Message: "Files listed successfully", Data: files}
+	response := model.Response{Code: 200, Message: "Files listed successfully", Data: files}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -390,7 +317,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request body", http.StatusBadRequest)
 		return
 	}
-	var requestData RequestFileData
+	var requestData model.RequestFileData
 	err = json.Unmarshal(body, &requestData)
 	if err != nil {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
@@ -403,7 +330,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 	copyName := requestData.Name
 
 	if filePath == "" || copyName == "" {
-		response := Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -413,7 +340,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 	fileInfo, err := os.Stat(filePath)
 	// check if folder exists
 	if os.IsNotExist(err) {
-		response := Response{Code: 500, Message: "Failed to check folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to check folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -421,7 +348,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fileInfo.IsDir() {
-		response := Response{Code: 500, Message: "Not support to copy folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Not support to copy folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -432,7 +359,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 	dir := filepath.Dir(filePath)
 	newPath := dir + "/" + copyName
 	if _, err := os.Stat(newPath); err == nil {
-		response := Response{Code: 500, Message: "The target file exists", Data: nil}
+		response := model.Response{Code: 500, Message: "The target file exists", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -442,7 +369,7 @@ func copyFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	copyFile(filePath, newPath)
 
-	response := Response{Code: 200, Message: "File copied successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "File copied successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -467,7 +394,7 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request body", http.StatusBadRequest)
 		return
 	}
-	var requestData RequestFileData
+	var requestData model.RequestFileData
 	err = json.Unmarshal(body, &requestData)
 	if err != nil {
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
@@ -480,7 +407,7 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 	fileName := requestData.Name
 
 	if filePath == "" || fileName == "" {
-		response := Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -503,7 +430,7 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := Response{Code: 200, Message: "File unzip successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "File unzip successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -512,14 +439,14 @@ func unzipFileHandler(w http.ResponseWriter, r *http.Request) {
 
 func listFolderHandler(w http.ResponseWriter, r *http.Request) {
 
-	folders := []File{}
+	folders := []model.File{}
 	path := r.FormValue("path")
 	if len(path) == 0 {
 		path = root
 	}
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		response := Response{Code: 500, Message: "Failed to list folders", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to list folders", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -528,10 +455,10 @@ func listFolderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			folders = append(folders, File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: true, Id: strconv.FormatInt(file.ModTime().UnixNano(), 10)})
+			folders = append(folders, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: true, Id: strconv.FormatInt(file.ModTime().UnixNano(), 10)})
 		}
 	}
-	response := Response{Code: 200, Message: "Folders listed successfully", Data: folders}
+	response := model.Response{Code: 200, Message: "Folders listed successfully", Data: folders}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -542,7 +469,7 @@ func deleteFolderHandler(w http.ResponseWriter, r *http.Request) {
 
 	folderPath := r.FormValue("path")
 	if folderPath == "" {
-		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -551,14 +478,14 @@ func deleteFolderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := os.RemoveAll(folderPath)
 	if err != nil {
-		response := Response{Code: 500, Message: "Failed to delete folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to delete folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(jsonResponse)
 		return
 	}
-	response := Response{Code: 200, Message: "Folder deleted successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "Folder deleted successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -570,7 +497,7 @@ func renameFolderHandler(w http.ResponseWriter, r *http.Request) {
 	folderPath := r.FormValue("path")
 	newName := r.FormValue("new_name")
 	if folderPath == "" || newName == "" {
-		response := Response{Code: 400, Message: "Missing path or new_name parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path or new_name parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -579,14 +506,14 @@ func renameFolderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := os.Rename(folderPath, newName)
 	if err != nil {
-		response := Response{Code: 500, Message: "Failed to rename folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to rename folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(jsonResponse)
 		return
 	}
-	response := Response{Code: 200, Message: "Folder renamed successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "Folder renamed successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -598,7 +525,7 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := r.FormValue("path")
 	copyName := r.FormValue("name")
 	if filePath == "" || copyName == "" {
-		response := Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path or name parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -608,7 +535,7 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 	fileInfo, err := os.Stat(filePath)
 	// check if folder exists
 	if os.IsNotExist(err) {
-		response := Response{Code: 500, Message: "Failed to check folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Failed to check folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -616,7 +543,7 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if fileInfo.IsDir() {
-		response := Response{Code: 500, Message: "Not support to copy folder", Data: nil}
+		response := model.Response{Code: 500, Message: "Not support to copy folder", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -627,7 +554,7 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 	dir := filepath.Dir(filePath)
 	newPath := dir + "/" + copyName
 	if _, err := os.Stat(newPath); err == nil {
-		response := Response{Code: 500, Message: "The target file exists", Data: nil}
+		response := model.Response{Code: 500, Message: "The target file exists", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -637,7 +564,7 @@ func copyFolderHandler(w http.ResponseWriter, r *http.Request) {
 
 	copyFile(filePath, newPath)
 
-	response := Response{Code: 200, Message: "File copied successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "File copied successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -688,7 +615,7 @@ func createFolderHandler(w http.ResponseWriter, r *http.Request) {
 
 	folderPath := r.FormValue("path")
 	if folderPath == "" || folderPath == "." || folderPath == "/" {
-		response := Response{Code: 400, Message: "Missing path parameter", Data: nil}
+		response := model.Response{Code: 400, Message: "Missing path parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -703,7 +630,7 @@ func createFolderHandler(w http.ResponseWriter, r *http.Request) {
 		// create new folder
 		err := os.MkdirAll(folderPath, 0755)
 		if err != nil {
-			response := Response{Code: 500, Message: "Failed to create new folder", Data: nil}
+			response := model.Response{Code: 500, Message: "Failed to create new folder", Data: nil}
 			jsonResponse, _ := json.Marshal(response)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -711,14 +638,14 @@ func createFolderHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		response := Response{Code: 400, Message: "Folder already exists", Data: nil}
+		response := model.Response{Code: 400, Message: "Folder already exists", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(jsonResponse)
 		return
 	}
-	response := Response{Code: 200, Message: "Folder created successfully", Data: nil}
+	response := model.Response{Code: 200, Message: "Folder created successfully", Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
