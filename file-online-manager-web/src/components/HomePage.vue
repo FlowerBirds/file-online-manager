@@ -80,6 +80,7 @@
             LargeFileUpload
         },
         mounted() {
+            document.title = '文件管理工具';
             this.listFile('')
         },
         methods: {
