@@ -1,21 +1,28 @@
 # file-online-manager-web
 
-## Project setup
+## 安装
+切换npm源
+```
+npm config set registry https://registry.npm.taobao.org
+```
+初始化项目
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### 运行
+运行前端之前，先运行后端
 ```
 npm run serve
 ```
 
-### Compiles and minifies for production
+### 构建
+会在工程的同级目录下创建static目录
 ```
 npm run build
 ```
 
-### Lints and fixes files
+### 运行代码校验
 ```
 npm run lint
 ```
