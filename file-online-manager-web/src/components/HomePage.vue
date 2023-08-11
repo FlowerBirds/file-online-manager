@@ -14,6 +14,7 @@
                 </el-main>
             </el-aside>
             <el-main style="">
+              <div id="table-container">
                 <el-table :data="tableData" style="width: 100%">
                     <el-table-column prop="name" label="名称" width="300"></el-table-column>
                     <el-table-column prop="size" label="大小"></el-table-column>
@@ -23,7 +24,7 @@
                             <i class="el-icon-document" v-if="!scope.row.isDir"></i>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="modTime" label="修改时间" width="420"></el-table-column>
+                    <el-table-column prop="modTime" label="修改时间" ></el-table-column>
                     <el-table-column label="操作" width="350">
                         <template slot-scope="scope">
                             <el-button type="primary" size="small" icon="el-icon-delete" @click="deleteFile(scope.row)"
@@ -37,6 +38,7 @@
                         </template>
                     </el-table-column>
                 </el-table>
+              </div>
             </el-main>
         </el-container>
         <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
@@ -48,6 +50,12 @@
         </el-dialog>
     </div>
 </template>
+
+<style>
+#table-container {
+  height: 100%;
+}
+</style>
 
 <script>
     import LargeFileUpload from './LargeFileUpload.vue';
