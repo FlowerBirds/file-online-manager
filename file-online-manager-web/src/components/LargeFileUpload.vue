@@ -51,7 +51,7 @@
             return {
                 options: {
                     // 上传地址
-                    target: "http://localhost:8081/api/manager/file/upload1?path=" + this.currentPath,
+                    target: window.location.href + "api/manager/file/upload1?path=" + this.currentPath,
                     // 是否开启服务器分片校验。默认为 true
                     testChunks: true,
                     // 真正上传的时候使用的 HTTP 方法,默认 POST
