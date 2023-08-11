@@ -7,10 +7,7 @@
             <uploader-drop>
                 <p>拖动文件到这里上传</p>
                 <uploader-btn>选择文件</uploader-btn>
-                <uploader-btn :directory="true">选择文件夹</uploader-btn>
             </uploader-drop>
-            <!-- uploader-list可自定义样式 -->
-            <!-- <uploader-list></uploader-list> -->
             <uploader-list>
                 <div class="file-panel" :class="{ collapse: collapse }">
                     <div class="file-title">
@@ -22,9 +19,7 @@
                         </div>
                     </div>
 
-                    <ul class="file-list" :class="
-              collapse ? 'uploader-list-ul-show' : 'uploader-list-ul-hidden'
-            ">
+                    <ul class="file-list" :class="collapse ? 'uploader-list-ul-show' : 'uploader-list-ul-hidden'">
                         <li v-for="file in uploadFileList" :key="file.id">
                             <uploader-file :class="'file_' + file.id" ref="files" :file="file"
                                 :list="true"></uploader-file>
@@ -51,7 +46,7 @@
             return {
                 options: {
                     // 上传地址
-                    target: window.location.href + "api/manager/file/upload1?path=" + this.currentPath,
+                    target: window.location.href + "api/manager/file/upload?path=" + this.currentPath,
                     // 是否开启服务器分片校验。默认为 true
                     testChunks: true,
                     // 真正上传的时候使用的 HTTP 方法,默认 POST
@@ -113,6 +108,13 @@
         },
         methods: {
             onFileAdded(file) {
+                if (file.isFolder) {
+                    this.$message({
+                        type: 'error',
+                        message: '不支持上传文件夹'
+                    });
+                }
+                console.log(file)
                 this.uploadFileList.push(file);
                 // 文件大小提示
                 if (file.size > LARGE_FILE_SIZE) {

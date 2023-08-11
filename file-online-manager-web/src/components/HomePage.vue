@@ -15,7 +15,8 @@
             </el-aside>
             <el-main style="">
               <div id="table-container">
-                <el-table :data="tableData" style="width: 100%">
+                <el-input placeholder="请输入名称" prefix-icon="el-icon-search" v-model="searchKey"></el-input>
+                <el-table :data="tableData.filter(data => !searchKey || data.name.toLowerCase().includes(searchKey.toLowerCase()))" style="width: 100%">
                     <el-table-column prop="name" label="名称" width="300"></el-table-column>
                     <el-table-column prop="size" label="大小"></el-table-column>
                     <el-table-column prop="type" label="类型">
@@ -24,8 +25,8 @@
                             <i class="el-icon-document" v-if="!scope.row.isDir"></i>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="modTime" label="修改时间" ></el-table-column>
-                    <el-table-column label="操作" width="350">
+                    <el-table-column sortable prop="modTime" label="修改时间" ></el-table-column>
+                    <el-table-column align="left">
                         <template slot-scope="scope">
                             <el-button type="primary" size="small" icon="el-icon-delete" @click="deleteFile(scope.row)"
                                 title="删除"></el-button>
@@ -44,8 +45,7 @@
         <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
             <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
             <span slot="footer" class="dialog-footer">
-                <el-button @click="dialogVisible = false">取 消</el-button>
-                <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+                <el-button type="primary" @click="uploadOk">确 定</el-button>
             </span>
         </el-dialog>
     </div>
@@ -70,7 +70,8 @@
                     label: 'name'
                 },
                 currentPath: '.',
-                dialogVisible: false
+                dialogVisible: false,
+                searchKey: ""
             }
         },
         props: {
@@ -84,13 +85,6 @@
             this.listFile('')
         },
         methods: {
-            handleClose(done) {
-                this.$confirm('确认关闭？')
-                    .then(() => {
-                        done();
-                    })
-                    .catch(() => {});
-            },
             loadNode(node, resolve) {
                 let path = node.data.path
                 if (!path) {
@@ -186,31 +180,21 @@
             },
             uploadFile() {
                 this.dialogVisible = true;
-                // let input = document.createElement('input');
-                // input.type = 'file';
-                // input.onchange = () => {
-                //     let file = input.files[0];
-                //     let formData = new FormData();
-                //     formData.append('file', file);
-                //     formData.append('path', this.currentPath);
-                //     let loadingInstance = this.$loading({
-                //         lock: true,
-                //         text: '文件上传中...',
-                //         spinner: 'el-icon-loading',
-                //         background: 'rgba(0, 0, 0, 0.7)',
-                //         target: document.querySelector('#app')
-                //     });
-                //     this.$http.post('./api/manager/file/upload', formData).then(response => {
-                //         console.log(response.body)
-                //         loadingInstance.close();
-                //         this.listFile(this.currentPath)
-                //     }, response => {
-                //         console.log(response.body)
-                //         loadingInstance.close();
-                //         this.listFile(this.currentPath)
-                //     })
-                // };
-                // input.click();
+            },
+            /**
+             * 上传文件框关闭图标
+             * @param done 关闭调用
+             */
+            handleClose(done) {
+                this.listFile(this.currentPath);
+                done();
+            },
+            /**
+             * 上传文件框确定
+             */
+            uploadOk() {
+                this.listFile(this.currentPath);
+                this.dialogVisible = false;
             },
             /**
              * 检测文件类型

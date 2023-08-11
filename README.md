@@ -7,7 +7,7 @@
  - 文件展示列表
  - 左侧展示文件夹树
  - 右侧展示当前选中的文件夹下的文件列表
- - 文件列表展示的每个文件上面显示删除、重命名操作、复制等按钮
+ - 文件列表展示的每个文件上面显示删除、重命名操作、复制、解压等按钮
  - 左侧文件夹树上面有个工具栏，工具栏上面有新增文件夹、上传文件按钮
 
 ### 后端
@@ -20,6 +20,8 @@
  - 文件重命名：/api/manager/file/rename
  - 文件列表：/api/manager/file/list
  - 文件复制：/api/manager/file/copy
+ - 文件加压：/api/manager/file/unzip
+ - 文件上传：/api/manager/file/upload
  - 文件夹列表：/api/manager/folder/list
  - 文件夹删除：/api/manager/folder/delete
  - 文件夹重命名：/api/manager/folder/rename

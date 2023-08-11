@@ -55,8 +55,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/file/rename", handler.RenameFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/list", listFileHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/file/copy", copyFileHandler).Methods("POST")
-	router.HandleFunc(contextPath+"api/manager/file/upload", uploadFileHandler).Methods("POST")              // Added upload file handler
-	router.HandleFunc(contextPath+"api/manager/file/upload1", uploadLagerFileHandler).Methods("POST", "GET") // Added upload file handler
+	router.HandleFunc(contextPath+"api/manager/file/upload", uploadLagerFileHandler).Methods("POST", "GET")
 	router.HandleFunc(contextPath+"api/manager/file/unzip", unzipFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/list", listFolderHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/folder/delete", deleteFolderHandler).Methods("DELETE")
@@ -128,40 +127,6 @@ func accessLogMiddleware(next http.Handler) http.Handler {
 		// 继续执行下一个处理函数
 		next.ServeHTTP(w, r)
 	})
-}
-
-func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
-
-	file, handler, err := r.FormFile("file")
-	path := r.FormValue("path")
-	if err != nil {
-		response := model.Response{Code: 400, Message: "Failed to get file", Data: nil}
-		jsonResponse, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(jsonResponse)
-		return
-	}
-	defer file.Close()
-	if path == "." {
-		path = root
-	}
-	f, err := os.OpenFile(path+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		response := model.Response{Code: 500, Message: "Failed to upload file", Data: nil}
-		jsonResponse, _ := json.Marshal(response)
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(jsonResponse)
-		return
-	}
-	defer f.Close()
-	io.Copy(f, file)
-	response := model.Response{Code: 200, Message: "File uploaded successfully", Data: nil}
-	jsonResponse, _ := json.Marshal(response)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonResponse)
 }
 
 type FileChunkParam struct {
