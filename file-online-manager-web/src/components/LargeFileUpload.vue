@@ -11,7 +11,7 @@
             <uploader-list>
                 <div class="file-panel" :class="{ collapse: collapse }">
                     <div class="file-title">
-                        <p class="file-list-title">文件列表</p>
+                        <div class="file-list-title">文件列表</div>
                         <div class="operate">
                             <el-button type="text" @click="operate" :title="collapse ? '折叠' : '展开'">
                                 <i class="icon" :class="collapse ? 'el-icon-caret-bottom' : 'el-icon-caret-top'"></i>
@@ -39,7 +39,7 @@ import {v4 as uuidv4} from 'uuid';
 // 大文件 2G 会有提示
 const LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024;
 // 分片大小，30MB
-const CHUNK_SIZE = 30 * 1024 * 1024;
+const CHUNK_SIZE = 20 * 1024 * 1024;
 export default {
     name: 'TestComponent',
     data() {
@@ -210,6 +210,8 @@ export default {
     line-height: 30px;
     padding: 0 15px;
     border-bottom: 1px solid #ddd;
+    justify-content: space-around;
+    align-items: center;
 }
 
 .file-title {

@@ -46,7 +46,7 @@
                 </div>
             </el-main>
         </el-container>
-        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
+        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close>
             <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
             <span slot="footer" class="dialog-footer">
                 <el-button type="primary" @click="uploadOk">确 定</el-button>

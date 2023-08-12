@@ -4,6 +4,9 @@ ENV CGO_ENABLED=0
 WORKDIR /app
 
 COPY vendor vendor
+COPY handler handler
+COPY model model
+COPY util util
 COPY go.mod go.mod
 COPY main.go main.go
 
