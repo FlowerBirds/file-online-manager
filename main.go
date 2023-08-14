@@ -186,7 +186,7 @@ func uploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if saveStatus {
-			fmt.Println("上传成功")
+			log.Println("上传成功：", fileChunkParam.Filename, chunkNumber, totalChunks)
 			response := model.Response{Code: 200, Message: "File uploaded successfully", Data: nil}
 			jsonResponse, _ := json.Marshal(response)
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
