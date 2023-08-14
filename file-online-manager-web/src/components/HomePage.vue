@@ -40,6 +40,8 @@
                                            @click="copyFile(scope.row)" title="复制"></el-button>
                                 <el-button v-if="checkFileType(scope.row.name)" type="primary" size="small"
                                            icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
+                                <el-button v-if="scope.row.isDir" type="primary" size="small" icon="el-icon-folder-add" @click="zipFolder(scope.row)"
+                                           title="压缩"></el-button>
                                 <el-button type="primary" size="small" icon="el-icon-download" @click="downloadFiles(scope.row)"
                                            title="下载"></el-button>
                             </template>
@@ -232,6 +234,23 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     }, (data) => {
                         $this.$refs.directoryTree.updateKeyChildren(currentNode.id, data);
                     });
+                    $this.listFile($this.currentPath)
+                }).catch(error => {
+                    $this.$alert(error.response.data.message, '错误', {
+                        confirmButtonText: '确定',
+                        type: 'error'
+                    })
+                })
+            },
+            /**
+             * 压缩文件夹
+             * @param row 文件信息
+             */
+            zipFolder(row) {
+                let $this = this
+                $this.$http.post('./api/manager/folder/zip', {
+                    path: row.path
+                }).then(() => {
                     $this.listFile($this.currentPath)
                 }).catch(error => {
                     $this.$alert(error.response.data.message, '错误', {

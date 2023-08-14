@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -60,6 +61,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/folder/rename", renameFolderHandler).Methods("PUT")
 	router.HandleFunc(contextPath+"api/manager/folder/copy", copyFolderHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/create", createFolderHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/folder/zip", zipFileHandler).Methods("POST")
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
 	log.Println("server started at port 8080")
 	http.ListenAndServe(":8080", router)
@@ -344,4 +346,51 @@ func createFolderHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
-// 下载
+func zipFileHandler(w http.ResponseWriter, r *http.Request) {
+	// 请求类型为application/json中获取参数，而不是form表单
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Bad request body", http.StatusBadRequest)
+		return
+	}
+	var requestData model.RequestFileData
+	err = json.Unmarshal(body, &requestData)
+	if err != nil {
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// filePath := r.FormValue("path")
+	// copyName := r.FormValue("name")
+	filePath := requestData.Path
+	//fileName := requestData.Name
+
+	if filePath == "" {
+		response := model.Response{Code: 400, Message: "Missing path parameter", Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(jsonResponse)
+		return
+	}
+	// 获取文件所在的目录，并解压到当前目录
+	fileName := filepath.Base(filePath)
+	var cmdErr error = nil
+	cmdErr = util.ExecuteCommand("cd", path.Join(filePath, "../"))
+	cmdErr = util.ExecuteCommand("zip", fileName+".zip", path.Join(filePath, "../"))
+	if cmdErr != nil {
+		response := model.Response{Code: 400, Message: cmdErr.Error(), Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(jsonResponse)
+		log.Println("zip failed", cmdErr)
+		return
+	}
+
+	response := model.Response{Code: 200, Message: "File zip successfully", Data: nil}
+	jsonResponse, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
