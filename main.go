@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -62,6 +63,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/folder/rename", renameFolderHandler).Methods("PUT")
 	router.HandleFunc(contextPath+"api/manager/folder/copy", copyFolderHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/create", createFolderHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/file/download", downloadHandler).Methods("GET") //Added download file handler
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
 	log.Println("server started at port 8080")
 	http.ListenAndServe(":8080", router)
@@ -654,4 +656,57 @@ func createFolderHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
+}
+
+// 下载
+func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	// 获取请求的文件名
+	filename := r.URL.Query().Get("filename")
+	filePath := r.URL.Query().Get("path")
+	log.Println(filename)
+	log.Println(filePath)
+	// 根据文件名的后缀判断文件类型
+	var contentType string
+	switch filepath.Ext(filename) {
+	case ".zip":
+		contentType = "application/zip"
+	case ".class":
+		contentType = "application/octet-stream"
+	case ".tar":
+		contentType = "application/x-tar"
+	case ".jar":
+		contentType = "application/java-archive"
+	default:
+		http.Error(w, "Unsupported file extension", http.StatusBadRequest)
+		return
+	}
+
+	// 设置响应头，指定文件的Content-Disposition为attachment，表示下载文件
+	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+	w.Header().Set("Content-Type", contentType)
+
+	// 读取文件内容
+	file, err := os.Open(path.Join(filePath, filename))
+	if err != nil {
+		// 处理文件打开失败的情况
+		response := Response{Code: 400, Message: "Folder already exists", Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(jsonResponse)
+		return
+	}
+	defer file.Close()
+
+	// 将文件内容写入响应体
+	_, err = io.Copy(w, file)
+	if err != nil {
+		// 处理文件写入响应体失败的情况
+		response := Response{Code: 400, Message: "Folder not exists", Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(jsonResponse)
+		return
+	}
 }
