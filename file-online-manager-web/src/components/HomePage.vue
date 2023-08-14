@@ -14,34 +14,41 @@
                 </el-main>
             </el-aside>
             <el-main style="">
-                <el-table :data="tableData" style="width: 100%">
-                    <el-table-column prop="name" label="名称" width="300"></el-table-column>
-                    <el-table-column prop="size" label="大小"></el-table-column>
-                    <el-table-column prop="type" label="类型">
-                        <template slot-scope="scope">
-                            <i class="el-icon-folder" v-if="scope.row.isDir"></i>
-                            <i class="el-icon-document" v-if="!scope.row.isDir"></i>
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="modTime" label="修改时间" width="420"></el-table-column>
-                    <el-table-column label="操作" width="350">
-                        <template slot-scope="scope">
-                            <el-button type="primary" size="small" icon="el-icon-delete" @click="deleteFile(scope.row)"
-                                title="删除"></el-button>
-                            <el-button type="primary" size="small" icon="el-icon-edit" @click="renameFile(scope.row)"
-                                title="重命名"></el-button>
-                            <el-button type="primary" size="small" icon="el-icon-document-copy"
-                                @click="copyFile(scope.row)" title="复制"></el-button>
-                            <el-button v-if="checkFileType(scope.row.name, ['.zip'])" type="primary" size="small"
-                                icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
-                            <el-button v-if="checkFileType(scope.row.name, ['.zip','jar','.tar'])" type="primary" size="small"
-                                       icon="el-icon-download" @click="downloadFiles(scope.row)" title="下载"></el-button>
-                        </template>
-                    </el-table-column>
-                </el-table>
+                <div id="table-container">
+                    <el-input placeholder="请输入名称" prefix-icon="el-icon-search" v-model="searchKey"></el-input>
+                    <el-table
+                        :data="tableData.filter(data => !searchKey || data.name.toLowerCase().includes(searchKey.toLowerCase()))"
+                        style="width: 100%">
+                        <el-table-column prop="name" label="名称" width="300"></el-table-column>
+                        <el-table-column prop="size" label="大小"></el-table-column>
+                        <el-table-column prop="type" label="类型">
+                            <template slot-scope="scope">
+                                <i class="el-icon-folder" v-if="scope.row.isDir"></i>
+                                <i class="el-icon-document" v-if="!scope.row.isDir"></i>
+                            </template>
+                        </el-table-column>
+                        <el-table-column sortable prop="modTime" label="修改时间"></el-table-column>
+                        <el-table-column label="操作" align="left">
+                            <template slot-scope="scope">
+                                <el-button type="primary" size="small" icon="el-icon-delete"
+                                           @click="deleteFile(scope.row)"
+                                           title="删除"></el-button>
+                                <el-button type="primary" size="small" icon="el-icon-edit"
+                                           @click="renameFile(scope.row)"
+                                           title="重命名"></el-button>
+                                <el-button type="primary" size="small" icon="el-icon-document-copy"
+                                           @click="copyFile(scope.row)" title="复制"></el-button>
+                                <el-button v-if="checkFileType(scope.row.name)" type="primary" size="small"
+                                           icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
+                                <el-button type="primary" size="small" icon="el-icon-download" @click="downloadFiles(scope.row)"
+                                           title="下载"></el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
             </el-main>
         </el-container>
-        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose">
+        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close>
             <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
             <span slot="footer" class="dialog-footer">
                  <el-button type="primary" @click="uploadOk">确 定</el-button>
@@ -63,7 +70,8 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     label: 'name'
                 },
                 currentPath: '.',
-                dialogVisible: false
+                dialogVisible: false,
+                searchKey: ""
             }
         },
         props: {
@@ -73,16 +81,10 @@ import LargeFileUpload from './LargeFileUpload.vue';
             LargeFileUpload
         },
         mounted() {
+            document.title = '文件管理工具';
             this.listFile('')
         },
         methods: {
-            handleClose(done) {
-                this.$confirm('确认关闭？')
-                    .then(() => {
-                        done();
-                    })
-                    .catch(() => {});
-            },
             loadNode(node, resolve) {
                 let path = node.data.path
                 if (!path) {
@@ -178,31 +180,14 @@ import LargeFileUpload from './LargeFileUpload.vue';
             },
             uploadFile() {
                 this.dialogVisible = true;
-                // let input = document.createElement('input');
-                // input.type = 'file';
-                // input.onchange = () => {
-                //     let file = input.files[0];
-                //     let formData = new FormData();
-                //     formData.append('file', file);
-                //     formData.append('path', this.currentPath);
-                //     let loadingInstance = this.$loading({
-                //         lock: true,
-                //         text: '文件上传中...',
-                //         spinner: 'el-icon-loading',
-                //         background: 'rgba(0, 0, 0, 0.7)',
-                //         target: document.querySelector('#app')
-                //     });
-                //     this.$http.post('./api/manager/file/upload', formData).then(response => {
-                //         console.log(response.body)
-                //         loadingInstance.close();
-                //         this.listFile(this.currentPath)
-                //     }, response => {
-                //         console.log(response.body)
-                //         loadingInstance.close();
-                //         this.listFile(this.currentPath)
-                //     })
-                // };
-                // input.click();
+            },
+            /**
+             * 上传文件框关闭图标
+             * @param done 关闭调用
+             */
+            handleClose(done) {
+                this.listFile(this.currentPath);
+                done();
             },
             /**
              * 检测文件类型
@@ -212,7 +197,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
              */
             checkFileType(fileName, fileType) {
                 if (!fileType) {
-                    fileType = ['.zip', '.rar', '.gz', '.tar', '.7z','.jar'];
+                    fileType = ['.zip', '.gz', '.tar'];
                 }
                 const fileExtension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
                 return fileType.includes(fileExtension);
@@ -222,7 +207,14 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row
              */
             downloadFiles(row) {
-                window.open("http://localhost:8080//api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
+                window.open(window.location.href + "api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
+            },
+            /**
+             * 上传文件框确定
+             */
+            uploadOk() {
+                this.listFile(this.currentPath);
+                this.dialogVisible = false;
             },
             /**
              * 解压文件
@@ -242,7 +234,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     });
                     $this.listFile($this.currentPath)
                 }).catch(error => {
-                    $this.$alert(error.body.message || error.body, '错误', {
+                    $this.$alert(error.response.data.message, '错误', {
                         confirmButtonText: '确定',
                         type: 'error'
                     })

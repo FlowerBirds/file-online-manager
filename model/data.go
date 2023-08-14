@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"time"
 )
 
@@ -23,6 +24,21 @@ type Response struct {
 type RequestFileData struct {
 	Path string `json:"path"`
 	Name string `json:"name"`
+}
+
+type FileChunkParam struct {
+	//ID               uint64  `json:"id"`
+	ChunkNumber      int     `json:"chunkNumber"`
+	ChunkSize        float32 `json:"chunkSize"`
+	CurrentChunkSize float32 `json:"currentChunkSize"`
+	TotalChunks      int     `json:"totalChunks"`
+	TotalSize        float64 `json:"totalSize"`
+	Identifier       string  `json:"identifier"`
+	Filename         string  `json:"filename"`
+	RelativePath     string  `json:"relativePath"`
+	//Createtime       time.Time      `json:"createtime"`
+	//Updatetime       time.Time      `json:"updatetime"`
+	File multipart.File `json:"file"`
 }
 
 func (f *File) MarshalJSON() ([]byte, error) {

@@ -9,7 +9,12 @@ module.exports = defineConfig({
     transpileDependencies: true,
     // 开发时的代理
     devServer: {
-        proxy: 'http://localhost:8080'
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8080',
+                changeOrigin: true
+            }
+        }
     },
     // 编译后输出路径
     outputDir: '../static'
