@@ -34,8 +34,8 @@
                                 @click="copyFile(scope.row)" title="复制"></el-button>
                             <el-button v-if="checkFileType(scope.row.name, ['.zip'])" type="primary" size="small"
                                 icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
-                            <el-button type="primary" size="small" icon="el-icon-download" @click="downloadFiles(scope.row)"
-                                       title="下载"></el-button>
+                            <el-button v-if="checkFileType(scope.row.name, ['.zip','jar','.tar'])" type="primary" size="small"
+                                       icon="el-icon-download" @click="downloadFiles(scope.row)" title="下载"></el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -212,7 +212,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
              */
             checkFileType(fileName, fileType) {
                 if (!fileType) {
-                    fileType = ['.zip', '.rar', '.gz', '.tar', '.7z'];
+                    fileType = ['.zip', '.rar', '.gz', '.tar', '.7z','.jar'];
                 }
                 const fileExtension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
                 return fileType.includes(fileExtension);
@@ -222,24 +222,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row
              */
             downloadFiles(row) {
-                let $this = this
-                $this.$http.post('./api/manager/file/downloadHandler', {
-                    path: row.path,
-                    name: row.name
-                }).then(() => {
-                    var currentNode = $this.$refs.directoryTree.getCurrentNode();
-                    $this.loadNode({
-                        data: currentNode
-                    }, (data) => {
-                        $this.$refs.directoryTree.updateKeyChildren(currentNode.id, data);
-                    });
-                    $this.listFile($this.currentPath)
-                }).catch(error => {
-                    $this.$alert(error.body.message || error.body, '错误', {
-                        confirmButtonText: '确定',
-                        type: 'error'
-                    })
-                })
+                window.open("http://localhost:8080//api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
             },
             /**
              * 解压文件

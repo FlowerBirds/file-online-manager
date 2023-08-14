@@ -689,7 +689,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	file, err := os.Open(path.Join(filePath, filename))
 	if err != nil {
 		// 处理文件打开失败的情况
-		response := Response{Code: 400, Message: "Folder already exists", Data: nil}
+		response := model.Response{Code: 400, Message: "Folder already exists", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
@@ -702,7 +702,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = io.Copy(w, file)
 	if err != nil {
 		// 处理文件写入响应体失败的情况
-		response := Response{Code: 400, Message: "Folder not exists", Data: nil}
+		response := model.Response{Code: 400, Message: "Folder not exists", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
