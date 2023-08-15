@@ -30,20 +30,29 @@
                         <el-table-column sortable prop="modTime" label="修改时间"></el-table-column>
                         <el-table-column label="操作" align="left">
                             <template slot-scope="scope">
-                                <el-button type="primary" size="small" icon="el-icon-delete"
-                                           @click="deleteFile(scope.row)"
-                                           title="删除"></el-button>
                                 <el-button type="primary" size="small" icon="el-icon-edit"
                                            @click="renameFile(scope.row)"
                                            title="重命名"></el-button>
-                                <el-button type="primary" size="small" icon="el-icon-document-copy"
-                                           @click="copyFile(scope.row)" title="复制"></el-button>
                                 <el-button v-if="checkFileType(scope.row.name)" type="primary" size="small"
-                                           icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压"></el-button>
-                                <el-button v-if="scope.row.isDir" type="primary" size="small" icon="el-icon-folder-add" @click="zipFolder(scope.row)"
-                                           title="压缩"></el-button>
-                                <el-button type="primary" size="small" icon="el-icon-download" @click="downloadFiles(scope.row)"
-                                           title="下载"></el-button>
+                                           icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压">
+<!--                                    <span><img src="@/assets/unzip.png" alt="PNG Image" style="display: inline-block"></span>-->
+<!--                                    <el-image-->
+<!--                                        style="width: 12px; height: 12px"-->
+<!--                                        src="@/assets/unzip.png"-->
+<!--                                        fit="fill"></el-image>-->
+                                </el-button>
+                                <el-dropdown @command="(command) => handleCommand(command, scope.row)" style="padding: 0px 8px">
+                                    <el-button type="primary" size="small">
+                                        更多<i class="el-icon-arrow-down el-icon--right"></i>
+                                    </el-button>
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item command="delete">删除</el-dropdown-item>
+                                        <el-dropdown-item command="copy">复制</el-dropdown-item>
+                                        <el-dropdown-item command="zip">压缩</el-dropdown-item>
+                                        <el-dropdown-item command="download">下载</el-dropdown-item>
+                                        <el-dropdown-item>蚵仔煎</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -87,6 +96,22 @@ import LargeFileUpload from './LargeFileUpload.vue';
             this.listFile('')
         },
         methods: {
+            handleCommand(command, row) {
+                switch (command) {
+                    case 'delete':
+                        this.deleteFile(row);
+                        break;
+                    case 'copy':
+                        this.copyFile(row);
+                        break;
+                    case 'zip':
+                        this.zipFolder(row);
+                        break;
+                    case 'download':
+                        this.downloadFiles(row);
+                        break
+                }
+            },
             loadNode(node, resolve) {
                 let path = node.data.path
                 if (!path) {
@@ -121,7 +146,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
                             type: 'error'
                         })
                     })
-                })
+                }).catch(function (){})
             },
             renameFile(row) {
                 this.$prompt('请确认文件名称', '提示', {
