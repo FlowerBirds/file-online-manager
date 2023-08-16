@@ -20,12 +20,13 @@
  - 文件重命名：/api/manager/file/rename
  - 文件列表：/api/manager/file/list
  - 文件复制：/api/manager/file/copy
- - 文件加压：/api/manager/file/unzip
+ - 文件解压：/api/manager/file/unzip
  - 文件上传：/api/manager/file/upload
  - 文件夹列表：/api/manager/folder/list
  - 文件夹删除：/api/manager/folder/delete
  - 文件夹重命名：/api/manager/folder/rename
  - 文件夹复制：/api/manager/folder/copy
+ - 文件夹压缩：/api/manager/folder/zip
 
 ### 架构设计
 - 前后端分离
@@ -43,11 +44,13 @@ html时，系统能正确返回，html、png、js、css等静态文件位于stat
 - 文件重命名：/api/manager/file/rename
 - 文件列表：/api/manager/file/list
 - 文件复制：/api/manager/file/copy
+- 文件解压：/api/manager/file/unzip
+- 文件上传：/api/manager/file/upload
 - 文件夹列表：/api/manager/folder/list
 - 文件夹删除：/api/manager/folder/delete
 - 文件夹重命名：/api/manager/folder/rename
 - 文件夹复制：/api/manager/folder/copy
-- 文件上传：/api/manager/file/upload
+- 文件夹压缩：/api/manager/folder/zip
 ----
 生成main方法，并实现上述功能。
 
@@ -62,11 +65,13 @@ top+center布局，top里面实现一个工具栏，有一排按钮，高度20px
 - 文件重命名：/api/manager/file/rename
 - 文件列表：/api/manager/file/list
 - 文件复制：/api/manager/file/copy
+- 文件解压：/api/manager/file/unzip
+- 文件上传：/api/manager/file/upload
 - 文件夹列表：/api/manager/folder/list
 - 文件夹删除：/api/manager/folder/delete
 - 文件夹重命名：/api/manager/folder/rename
 - 文件夹复制：/api/manager/folder/copy
-- 文件上传：/api/manager/file/upload
+- 文件夹压缩：/api/manager/folder/zip
 ------
 实现以上功能。
 
@@ -90,8 +95,8 @@ export MANAGE_PASSWORD=1Fx98ksOa23GHapo0
 
 
 ## TODO list
-- [ ] 支持大文件分片上传
+- [x] 支持大文件分片上传
 - [x] 支持压缩文件解压（zip、tar）
-- [ ] 支持文件夹压缩
-- [ ] 支持文件下载
+- [x] 支持文件夹压缩
+- [x] 支持文件下载
 - [x] 支持设置安全模式，可以定时更新登录token
