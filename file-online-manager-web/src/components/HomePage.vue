@@ -33,13 +33,10 @@
                                 <el-button type="primary" size="small" icon="el-icon-edit"
                                            @click="renameFile(scope.row)"
                                            title="重命名"></el-button>
-                                <el-button v-if="checkFileType(scope.row.name)" type="primary" size="small"
-                                           icon="el-icon-grape" @click="unzipFile(scope.row)" title="解压">
-<!--                                    <span><img src="@/assets/unzip.png" alt="PNG Image" style="display: inline-block"></span>-->
-<!--                                    <el-image-->
-<!--                                        style="width: 12px; height: 12px"-->
-<!--                                        src="@/assets/unzip.png"-->
-<!--                                        fit="fill"></el-image>-->
+                                <el-button v-if="checkFileType(scope.row.name)" size="small" type="primary"
+                                           @click="unzipFile(scope.row)" title="解压"
+                                            style="width: 44px; height: 32px">
+                                    <img src="@/assets/unzip.png" alt="编辑" style="height: 14px;width: 14px;vertical-align: middle;">
                                 </el-button>
                                 <el-dropdown @command="(command) => handleCommand(command, scope.row)" style="padding: 0px 8px">
                                     <el-button type="primary" size="small">
