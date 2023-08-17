@@ -21,6 +21,8 @@ RUN go build -o manage
 # RUN npm run build
 
 FROM alpine:3.17 as ship
+RUN apk update && \
+    apk add zip --no-cache
 WORKDIR /home/app
 COPY --from=build /app/manage .
 COPY static static
