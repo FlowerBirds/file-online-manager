@@ -31,9 +31,9 @@ spec:
                 name: file-manage-secret
                 key: password
           - name: MANAGE_SECURITY
-            value: true
+            value: "true"
           - name: EXPIRE_TIME
-              value: 24
+            value: "24"
         ports:
         - containerPort: 8080
         volumeMounts:
