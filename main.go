@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -378,11 +377,18 @@ func zipFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
+	if strings.Index(filePath, "./") == 0 {
+		filePath = root + "/" + filePath
+	}
 	// 获取文件所在的目录，并解压到当前目录
 	fileName := filepath.Base(filePath)
+	fileDir := filepath.Dir(filePath)
 	var cmdErr error = nil
-	cmdErr = util.ExecuteCommand("cd", path.Join(filePath, "../"))
-	cmdErr = util.ExecuteCommand("zip", fileName+".zip", path.Join(filePath, "../"))
+	// 切换当前工作目录，执行完需要切换回去
+	currentPath, _ := os.Getwd()
+	os.Chdir(fileDir)
+	cmdErr = util.ExecuteCommand("zip", "-r", fileName+".zip", fileName)
+	os.Chdir(currentPath)
 	if cmdErr != nil {
 		response := model.Response{Code: 400, Message: cmdErr.Error(), Data: nil}
 		jsonResponse, _ := json.Marshal(response)

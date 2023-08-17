@@ -1,8 +1,12 @@
 package util
 
-import "os/exec"
+import (
+	"log"
+	"os/exec"
+)
 
 func ExecuteCommand(command string, args ...string) error {
+	log.Println(command, args)
 	cmd := exec.Command(command, args...)
 
 	// 创建管道用于获取命令输出
