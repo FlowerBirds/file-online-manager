@@ -30,6 +30,10 @@ spec:
               secretKeyRef:
                 name: file-manage-secret
                 key: password
+          - name: MANAGE_SECURITY
+            value: true
+          - name: EXPIRE_TIME
+              value: 24
         ports:
         - containerPort: 8080
         volumeMounts:
