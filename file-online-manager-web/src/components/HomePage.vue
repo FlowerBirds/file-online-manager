@@ -134,11 +134,11 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     $this.$http.delete('./api/manager/file/delete?path=' + row.path, {
                         path: row.path
                     }).then(response => {
-                        console.log(response.body)
+                        console.log(response)
                         $this.listFile($this.currentPath)
                     }, response => {
-                        console.log(response.body)
-                        $this.$alert(response.body.message, '错误', {
+                        console.log(response)
+                        $this.$alert(response.message, '错误', {
                             confirmButtonText: '确定',
                             type: 'error'
                         })

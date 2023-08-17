@@ -17,6 +17,8 @@ import (
 	"strings"
 )
 
+var RootPath = "."
+
 func DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	filePath := r.FormValue("path")
@@ -24,17 +26,18 @@ func DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
 		response := model.Response{Code: 400, Message: "Missing path parameter", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusOK)
 		w.Write(jsonResponse)
 		return
 	}
 	fmt.Println("remove file: " + filePath)
+	// 使用RemoveAll则删除文件夹，暂时不实现
 	err := os.Remove(filePath)
 	if err != nil {
 		response := model.Response{Code: 500, Message: "Failed to delete file", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusOK)
 		w.Write(jsonResponse)
 		return
 	}
@@ -206,6 +209,9 @@ func UploadLagerFileHandler(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 		// 接收路径
 		path := r.FormValue("path")
+		if strings.Index(path, "./") == 0 || path == "." {
+			path = RootPath + "/" + path
+		}
 		// 接收其他参数
 		chunkNumber, _ := strconv.Atoi(r.FormValue("chunkNumber"))
 		chunkSize, _ := strconv.ParseFloat(r.FormValue("chunkSize"), 32)

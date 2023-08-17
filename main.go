@@ -47,6 +47,7 @@ func main() {
 	initAuth()
 	// 增加拦截器
 	router.Use(accessLogMiddleware, authenticationMiddleware)
+	handler.RootPath = root
 
 	router.HandleFunc(contextPath+"api/manager/file/delete", handler.DeleteFileHandler).Methods("DELETE")
 	router.HandleFunc(contextPath+"api/manager/file/rename", handler.RenameFileHandler).Methods("POST")
