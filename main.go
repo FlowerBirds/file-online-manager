@@ -87,8 +87,13 @@ func initAuth() {
 		loginPassword = managePassword
 	}
 	if manageSecurity == "true" || manageSecurity == "" {
-		log.Println("use security mode, user token will be update per day.")
-		ticker := time.NewTicker(20 * time.Minute)
+		expireTimeStr := os.Getenv("EXPIRE_TIME")
+		expireTime, err := strconv.Atoi(expireTimeStr)
+		if err != nil {
+			expireTime = 24
+		}
+		log.Printf("use security mode, user token will be update %d hours. \n", expireTime)
+		ticker := time.NewTicker(time.Duration(expireTime) * time.Hour)
 		go func() {
 			for {
 				select {
