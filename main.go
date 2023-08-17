@@ -89,7 +89,7 @@ func initAuth() {
 	if manageSecurity == "true" || manageSecurity == "" {
 		expireTimeStr := os.Getenv("EXPIRE_TIME")
 		expireTime, err := strconv.Atoi(expireTimeStr)
-		if err != nil {
+		if err != nil || expireTime < 1 {
 			expireTime = 24
 		}
 		log.Printf("use security mode, user token will be update %d hours. \n", expireTime)
