@@ -20,8 +20,8 @@
                         :data="tableData.filter(data => !searchKey || data.name.toLowerCase().includes(searchKey.toLowerCase()))"
                         style="width: 100%">
                         <el-table-column prop="name" label="名称" width="300"></el-table-column>
-                        <el-table-column prop="size" label="大小"></el-table-column>
-                        <el-table-column prop="type" label="类型">
+                        <el-table-column prop="size" label="大小" width="160" :formatter="fileSizeFormat"></el-table-column>
+                        <el-table-column prop="type" label="类型" width="60">
                             <template slot-scope="scope">
                                 <i class="el-icon-folder folder" v-if="scope.row.isDir"></i>
                                 <i class="el-icon-document" v-if="!scope.row.isDir"></i>
@@ -356,6 +356,20 @@ import LargeFileUpload from './LargeFileUpload.vue';
             },
           onlineEdit(row) {
             this.$message.warning("当前类型不支持：" + row.name)
+          },
+          fileSizeFormat(row) {
+            let size = row.size
+            if (size == -1) {
+              return "-";
+            } else if (size < 1024) {
+              return size + " B";
+            } else if (size < 1024 * 1024) {
+              return (size / 1024).toFixed(2) + " KB";
+            } else if (size < 1024 * 1024 * 1024) {
+              return (size / (1024 * 1024)).toFixed(2) + " MB";
+            } else {
+              return (size / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+            }
           }
         }
     }
