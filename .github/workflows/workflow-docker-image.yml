@@ -14,7 +14,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: view
-      run: pwd && ls -l
+    - name: use nodejs
+      uses: actions/setup-node@v1
+      with:
+        node-version: '16.x'
+    - name: build-vue
+      run: 
+        cd file-online-manager-web
+        npm install
+        npm run build
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag file-manage:$(date +%s)
+      run: 
+        cd ..
+        docker build . --file Dockerfile --tag file-manage:$(date +%s)
