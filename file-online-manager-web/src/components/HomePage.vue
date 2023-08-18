@@ -315,7 +315,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
                         $this.$http.post('./api/manager/folder/create?path=' + path, {}).then(response => {
                             console.log(response.body)
                             $this.listFolder()
-                            $this.listFile(this.currentPath)
+                            $this.listFile($this.currentPath)
                             resolve(response.body)
                         }, response => {
                             console.log(response.body)

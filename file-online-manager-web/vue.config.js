@@ -18,5 +18,8 @@ module.exports = defineConfig({
         }
     },
     // 编译后输出路径
-    outputDir: '../static'
+    outputDir: '../static',
+    configureWebpack: config => {
+        config.devtool = 'source-map';
+    }
 })
