@@ -14,5 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: view
+      run: pwd && ls -l
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag file-manage:$(date +%s)
