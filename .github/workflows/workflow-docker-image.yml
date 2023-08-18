@@ -26,14 +26,15 @@ jobs:
     - name: Build the Docker image
       run: |
         pwd
-        docker build . --file Dockerfile --tag file-manage:$(date +%s)
+        IMAGE_ID=$(date +%s)
+        docker build . --file Dockerfile --tag file-manage:$(IMAGE_ID)
         docker images
-        pwd
-        echo "======="
-        docker save -o file-manage-$(date +%s).tar file-manage:$(date +%s)
+        mkdir image
+        echo "===$(IMAGE_ID)===="
+        docker save -o image/file-manage-$(date +%s).tar file-manage:$(IMAGE_ID)
     - name: Release Upload
       uses: d1ceward/draft-assets-release-action@v2.0.0
       with:
         token: secrets.GITHUB_TOKEN
         files: |
-          file-manage-$(date +%s).tar
+          image/*
