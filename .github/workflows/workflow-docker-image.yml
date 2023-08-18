@@ -18,6 +18,10 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: '16.x'
+    - name: Package source code
+      run: |
+        cd .. 
+        tar -czf source-code.tar.gz file-online-manager
     - name: build-vue
       run: |
         cd file-online-manager-web
@@ -54,4 +58,14 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
         asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
         asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+        asset_content_type: application/octet-stream
+    - name: Upload Source Code
+      id: upload-sorce-code
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: source-code.tar.gz
+        asset_name: source-code.tar.gz
         asset_content_type: application/octet-stream
