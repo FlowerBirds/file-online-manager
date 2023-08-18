@@ -35,7 +35,7 @@ jobs:
         docker save -o image/file-manage-$IMAGE_ID.tar file-manage:$IMAGE_ID
         echo "::set-output name=IMAGE_ID::$IMAGE_ID"
         ls -l
-        ls -l .github
+        cat .github/release-config.yml
     - name: Create Release
       id: create_release
       uses: release-drafter/release-drafter@v5
