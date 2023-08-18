@@ -33,8 +33,14 @@ jobs:
         echo "===$IMAGE_ID===="
         docker save -o image/file-manage-$(date +%s).tar file-manage:$IMAGE_ID
     - name: Release Upload
+      id: create_release
       uses: d1ceward/draft-assets-release-action@v2.0.0
       with:
         token: secrets.GITHUB_TOKEN
         files: |
           image/*
+    - name: Publish Draft Release
+      uses: d1ceward/draft-assets-release-action@v2.0.0
+      with:
+        action: publish
+        release_id: ${{ steps.create_release.outputs.release_id }}
