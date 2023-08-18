@@ -27,6 +27,9 @@ jobs:
       run: |
         pwd
         docker build . --file Dockerfile --tag file-manage:$(date +%s)
+        docker image
+        pwd
+        echo "======="
         docker save -o file-manage-$(date +%s).tar file-manage:$(date +%s)
     - name: Release Upload
       uses: d1ceward/draft-assets-release-action@v2.0.0
