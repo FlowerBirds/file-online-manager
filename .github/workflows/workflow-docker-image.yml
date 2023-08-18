@@ -25,5 +25,5 @@ jobs:
         npm run build
     - name: Build the Docker image
       run: |
-        cd ..
+        pwd
         docker build . --file Dockerfile --tag file-manage:$(date +%s)
