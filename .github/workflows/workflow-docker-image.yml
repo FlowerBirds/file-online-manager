@@ -27,7 +27,7 @@ jobs:
       run: |
         pwd
         docker build . --file Dockerfile --tag file-manage:$(date +%s)
-        docker image
+        docker images
         pwd
         echo "======="
         docker save -o file-manage-$(date +%s).tar file-manage:$(date +%s)
