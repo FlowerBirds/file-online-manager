@@ -22,6 +22,7 @@ jobs:
       run: |
         cd .. 
         tar -czf source-code.tar.gz file-online-manager
+        mv source-code.tar.gz file-online-manager/
     - name: build-vue
       run: |
         cd file-online-manager-web
