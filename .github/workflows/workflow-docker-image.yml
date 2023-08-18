@@ -9,9 +9,9 @@ on:
 jobs:
 
   build:
-
     runs-on: ubuntu-latest
-
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
     - uses: actions/checkout@v3
     - name: use nodejs
@@ -24,6 +24,7 @@ jobs:
         npm install
         npm run build
     - name: Build the Docker image
+      id: build_image
       run: |
         pwd
         IMAGE_ID=$(date +%s)
@@ -31,16 +32,24 @@ jobs:
         docker images
         mkdir image
         echo "===$IMAGE_ID===="
-        docker save -o image/file-manage-$(date +%s).tar file-manage:$IMAGE_ID
-    - name: Release Upload
+        docker save -o image/file-manage-$IMAGE_ID.tar file-manage:$IMAGE_ID
+        echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+    - name: Create Release
       id: create_release
-      uses: d1ceward/draft-assets-release-action@v2.0.0
+      uses: release-drafter/release-drafter@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        token: secrets.GITHUB_TOKEN
-        files: |
-          image/*
-    - name: Publish Draft Release
-      uses: d1ceward/draft-assets-release-action@v2.0.0
+        config-name: release-config.yml
+        version: ${{ steps.build_image.outputs.IMAGE_ID }}
+        tag: ${{ steps.build_image.outputs.IMAGE_ID }}
+    - name: Upload Images
+      id: upload-release-image
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        action: publish
-        release_id: ${{ steps.create_release.outputs.release_id }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+        asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+        asset_content_type: application/octet-stream
