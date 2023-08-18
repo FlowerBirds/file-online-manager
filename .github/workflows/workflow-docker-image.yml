@@ -70,3 +70,13 @@ jobs:
         asset_path: source-code.tar.gz
         asset_name: source-code.tar.gz
         asset_content_type: application/octet-stream
+    - name: Upload K8s Yaml
+      id: upload-yaml
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: file-online-manager.yaml
+        asset_name: file-online-manager.yaml
+        asset_content_type: application/text
