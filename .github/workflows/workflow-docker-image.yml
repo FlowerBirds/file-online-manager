@@ -19,11 +19,11 @@ jobs:
       with:
         node-version: '16.x'
     - name: build-vue
-      run: 
+      run: |
         cd file-online-manager-web
         npm install
         npm run build
     - name: Build the Docker image
-      run: 
+      run: |
         cd ..
         docker build . --file Dockerfile --tag file-manage:$(date +%s)
