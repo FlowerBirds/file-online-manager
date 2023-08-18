@@ -23,7 +23,7 @@
                         <el-table-column prop="size" label="大小"></el-table-column>
                         <el-table-column prop="type" label="类型">
                             <template slot-scope="scope">
-                                <i class="el-icon-folder" v-if="scope.row.isDir"></i>
+                                <i class="el-icon-folder folder" v-if="scope.row.isDir"></i>
                                 <i class="el-icon-document" v-if="!scope.row.isDir"></i>
                             </template>
                         </el-table-column>
@@ -47,7 +47,7 @@
                                         <el-dropdown-item command="copy">复制</el-dropdown-item>
                                         <el-dropdown-item command="zip">压缩</el-dropdown-item>
                                         <el-dropdown-item command="download">下载</el-dropdown-item>
-                                        <el-dropdown-item>蚵仔煎</el-dropdown-item>
+                                        <el-dropdown-item command="onlineEdit">在线编辑</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </el-dropdown>
                             </template>
@@ -106,6 +106,9 @@ import LargeFileUpload from './LargeFileUpload.vue';
                         break;
                     case 'download':
                         this.downloadFiles(row);
+                        break
+                    case 'onlineEdit':
+                        this.onlineEdit(row);
                         break
                 }
             },
@@ -350,7 +353,10 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 }, response => {
                     console.log(response.body)
                 })
-            }
+            },
+          onlineEdit(row) {
+            this.$message.warning("当前类型不支持：" + row.name)
+          }
         }
     }
 </script>
@@ -363,5 +369,11 @@ import LargeFileUpload from './LargeFileUpload.vue';
 
     .el-main {
         margin-left: 20px;
+    }
+    .el-icon-folder {
+      color: #0c23c9;
+    }
+    .el-icon-document {
+      color: burlywood;
     }
 </style>

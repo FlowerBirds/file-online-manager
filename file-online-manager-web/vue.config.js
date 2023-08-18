@@ -9,9 +9,10 @@ module.exports = defineConfig({
     transpileDependencies: true,
     // 开发时的代理
     devServer: {
+        port: 8081,
         proxy: {
             '/api': {
-                target: 'http://localhost:8080',
+                target: 'http://172.29.176.1:8080',
                 changeOrigin: true
             }
         }
