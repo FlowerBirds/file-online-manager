@@ -1,5 +1,5 @@
+prerelease: true
 template: |
   ## What’s Changed
 
   $CHANGES
-prerelease：true
