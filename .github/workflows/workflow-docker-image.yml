@@ -45,13 +45,18 @@ jobs:
         mv source-code.tar.gz source-code-$IMAGE_ID.tar.gz
     - name: Create Release
       id: create_release
-      uses: release-drafter/release-drafter@v5.21.1
+      #uses: release-drafter/release-drafter@v5.21.1
+      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        config-name: release-config.yml
-        version: ${{ steps.build_image.outputs.IMAGE_ID }}
-        tag: ${{ steps.build_image.outputs.IMAGE_ID }}
+        #config-name: release-config.yml
+        #version: ${{ steps.build_image.outputs.IMAGE_ID }}
+        #tag: ${{ steps.build_image.outputs.IMAGE_ID }}
+        release_name: v2.3.${{ steps.build_image.outputs.IMAGE_ID }}
+        tag_name: v2.3.${{ steps.build_image.outputs.IMAGE_ID }}
+        draft: false
+        prerelease: false
     - name: Upload Images
       id: upload-release-image
       uses: actions/upload-release-asset@v1
