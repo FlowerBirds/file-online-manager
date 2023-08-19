@@ -41,9 +41,11 @@ jobs:
         echo "::set-output name=IMAGE_ID::$IMAGE_ID"
         ls -l
         cat .github/release-config.yml
+        cp file-online-manage.yaml file-online-manage-$IMAGE_ID.yaml 
+        mv source-code.tar.gz source-code-$IMAGE_ID.tar.gz
     - name: Create Release
       id: create_release
-      uses: release-drafter/release-drafter@v5
+      uses: release-drafter/release-drafter@v5.21.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -67,8 +69,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: source-code.tar.gz
-        asset_name: source-code.tar.gz
+        asset_path: source-code-${{ steps.build_image.outputs.IMAGE_ID }}.tar.gz
+        asset_name: source-code-${{ steps.build_image.outputs.IMAGE_ID }}.tar.gz
         asset_content_type: application/octet-stream
     - name: Upload K8s Yaml
       id: upload-yaml
@@ -77,6 +79,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: file-online-manage.yaml
-        asset_name: file-online-manage.yaml
+        asset_path: file-online-manage-${{ steps.build_image.outputs.IMAGE_ID }}.yaml
+        asset_name: file-online-manage-${{ steps.build_image.outputs.IMAGE_ID }}.yaml
         asset_content_type: application/text
