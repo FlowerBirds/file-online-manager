@@ -1,0 +1,74 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: use nodejs
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16.x'
+      - name: build-vue
+        run: |
+          cd file-online-manager-web
+          npm install
+          npm run build
+      - name: Build the Docker image
+        id: build_image
+        run: |
+          pwd
+          IMAGE_ID=$(date +%s)
+          docker build . --file Dockerfile --tag file-manage:$IMAGE_ID
+          docker images
+          mkdir image
+          echo "===$IMAGE_ID===="
+          docker save -o image/file-manage-$IMAGE_ID.tar file-manage:$IMAGE_ID
+          echo "::set-output name=IMAGE_ID::$IMAGE_ID"
+          ls -l
+          cat .github/release-config.yml
+          cp file-online-manage.yaml file-online-manage-$IMAGE_ID.yaml
+          mv source-code.tar.gz source-code-$IMAGE_ID.tar.gz
+      - name: Create Release
+        id: create_release
+        #uses: release-drafter/release-drafter@v5.21.1
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          #config-name: release-config.yml
+          #version: ${{ steps.build_image.outputs.IMAGE_ID }}
+          #tag: ${{ steps.build_image.outputs.IMAGE_ID }}
+          release_name: v2.${{ steps.build_image.outputs.IMAGE_ID }}
+          tag_name: v2.${{ steps.build_image.outputs.IMAGE_ID }}
+          draft: false
+          prerelease: false
+      - name: Upload Images
+        id: upload-release-image
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+          asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+          asset_content_type: application/octet-stream
+      - name: Upload K8s Yaml
+        id: upload-yaml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: file-online-manage-${{ steps.build_image.outputs.IMAGE_ID }}.yaml
+          asset_name: file-online-manage-${{ steps.build_image.outputs.IMAGE_ID }}.yaml
+          asset_content_type: application/text
