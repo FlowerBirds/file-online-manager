@@ -37,7 +37,6 @@ jobs:
           ls -l
           cat .github/release-config.yml
           cp file-online-manage.yaml file-online-manage-$IMAGE_ID.yaml
-          mv source-code.tar.gz source-code-$IMAGE_ID.tar.gz
       - name: Create Release
         id: create_release
         #uses: release-drafter/release-drafter@v5.21.1
