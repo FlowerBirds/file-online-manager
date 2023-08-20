@@ -238,6 +238,10 @@ export default {
     transition: all 0.5s;
 }
 
+.file-list li {
+    text-align: left;
+}
+
 .uploader-file-size {
     width: 15% !important;
 }
@@ -264,8 +268,6 @@ li {
 .global-uploader-btn {
     display: none !important;
     clip: rect(0, 0, 0, 0);
-    /* width: 100px;
-height: 50px; */
 }
 
 .file-list-title {
