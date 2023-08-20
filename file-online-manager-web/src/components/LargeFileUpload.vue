@@ -41,7 +41,7 @@ const LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024;
 // 分片大小，30MB
 const CHUNK_SIZE = 20 * 1024 * 1024;
 export default {
-    name: 'TestComponent',
+    name: 'LargeFileUpload',
     data() {
         return {
             options: {
