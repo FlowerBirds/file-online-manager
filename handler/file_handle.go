@@ -5,6 +5,7 @@ import (
 	"file-online-manager/model"
 	"file-online-manager/util"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"io/ioutil"
 	"log"
@@ -117,7 +118,7 @@ func ListFileHandler(root string, w http.ResponseWriter, r *http.Request) {
 			size = file.Size()
 		}
 
-		files = append(files, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(), Size: size, ModTime: file.ModTime()})
+		files = append(files, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(), Size: size, ModTime: file.ModTime(), Id: uuid.New().String()})
 		sort.Slice(files, func(i, j int) bool {
 			return files[i].IsDir
 		})
