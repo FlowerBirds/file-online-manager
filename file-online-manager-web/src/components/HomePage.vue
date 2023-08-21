@@ -57,7 +57,7 @@
             </el-main>
         </el-container>
         <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close>
-            <LargeFileUpload :currentPath="currentPath"></LargeFileUpload>
+            <large-file-upload :currentPath="currentPath"></large-file-upload>
             <span slot="footer" class="dialog-footer">
                  <el-button type="primary" @click="uploadOk">确 定</el-button>
             </span>
@@ -79,14 +79,15 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 },
                 currentPath: '.',
                 dialogVisible: false,
-                searchKey: ""
+                searchKey: "",
+                loading: null
             }
         },
         props: {
 
         },
         components: {
-            LargeFileUpload
+            "large-file-upload": LargeFileUpload
         },
         mounted() {
             document.title = '文件管理工具';
@@ -248,7 +249,13 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row 文件信息
              */
             unzipFile(row) {
-                let $this = this
+                let $this = this;
+                $this.loading = $this.$loading({
+                    lock: true,
+                    text: '解压中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
                 $this.$http.post('./api/manager/file/unzip', {
                     path: row.path,
                     name: row.name
@@ -265,6 +272,10 @@ import LargeFileUpload from './LargeFileUpload.vue';
                         confirmButtonText: '确定',
                         type: 'error'
                     })
+                    if ($this.loading) {
+                        $this.loading.close(); // 关闭并销毁 loading
+                        $this.loading = null; // 重置 loading 引用
+                    }
                 })
             },
             /**
@@ -272,7 +283,13 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row 文件信息
              */
             zipFolder(row) {
-                let $this = this
+                let $this = this;
+                $this.loading = $this.$loading({
+                    lock: true,
+                    text: '压缩中',
+                    spinner: 'el-icon-loading',
+                    background: 'rgba(0, 0, 0, 0.7)'
+                });
                 $this.$http.post('./api/manager/folder/zip', {
                     path: row.path
                 }).then(() => {
@@ -282,6 +299,10 @@ import LargeFileUpload from './LargeFileUpload.vue';
                         confirmButtonText: '确定',
                         type: 'error'
                     })
+                    if ($this.loading) {
+                        $this.loading.close(); // 关闭并销毁 loading
+                        $this.loading = null; // 重置 loading 引用
+                    }
                 })
             },
             /**
@@ -350,8 +371,16 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 let $this = this
                 this.$http.get('./api/manager/file/list?path=' + path, {}).then(response => {
                     $this.tableData = response.data.data
+                    if ($this.loading) {
+                        $this.loading.close(); // 关闭并销毁 loading
+                        $this.loading = null; // 重置 loading 引用
+                    }
                 }, response => {
                     console.log(response.body)
+                    if ($this.loading) {
+                        $this.loading.close(); // 关闭并销毁 loading
+                        $this.loading = null; // 重置 loading 引用
+                    }
                 })
             },
           onlineEdit(row) {

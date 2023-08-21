@@ -41,7 +41,7 @@ const LARGE_FILE_SIZE = 2 * 1024 * 1024 * 1024;
 // 分片大小，30MB
 const CHUNK_SIZE = 20 * 1024 * 1024;
 export default {
-    name: 'TestComponent',
+    name: 'LargeFileUpload',
     data() {
         return {
             options: {
@@ -238,6 +238,10 @@ export default {
     transition: all 0.5s;
 }
 
+.file-list li {
+    text-align: left;
+}
+
 .uploader-file-size {
     width: 15% !important;
 }
@@ -264,8 +268,6 @@ li {
 .global-uploader-btn {
     display: none !important;
     clip: rect(0, 0, 0, 0);
-    /* width: 100px;
-height: 50px; */
 }
 
 .file-list-title {

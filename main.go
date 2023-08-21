@@ -6,6 +6,7 @@ import (
 	"file-online-manager/model"
 	"file-online-manager/util"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
@@ -156,7 +157,7 @@ func listFolderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			folders = append(folders, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: true, Id: strconv.FormatInt(file.ModTime().UnixNano(), 10)})
+			folders = append(folders, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: true, Id: uuid.New().String()})
 		}
 	}
 	response := model.Response{Code: 200, Message: "Folders listed successfully", Data: folders}
