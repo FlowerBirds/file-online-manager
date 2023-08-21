@@ -46,7 +46,7 @@ export default {
         return {
             options: {
                 // 上传地址
-                target: window.location.href + "file-online-manager/api/manager/file/upload?path=" + this.currentPath,
+                target: window.location.href + "api/manager/file/upload?path=" + this.currentPath,
                 // 是否开启服务器分片校验。默认为 true
                 testChunks: true,
                 // 真正上传的时候使用的 HTTP 方法,默认 POST

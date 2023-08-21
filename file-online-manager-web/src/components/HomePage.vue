@@ -235,7 +235,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row
              */
             downloadFiles(row) {
-                window.open(window.location.href + "file-online-manager/api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
+                window.open(window.location.href + "api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
             },
             /**
              * 上传文件框确定
