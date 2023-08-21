@@ -56,7 +56,7 @@
                 </div>
             </el-main>
         </el-container>
-        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close>
+        <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close :close-on-click-modal="false">
             <large-file-upload :currentPath="currentPath"></large-file-upload>
             <span slot="footer" class="dialog-footer">
                  <el-button type="primary" @click="uploadOk">确 定</el-button>
@@ -194,7 +194,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
                         $this.listFile(this.currentPath)
                     }, response => {
                         $this.listFile(this.currentPath);
-                        $this.$alert(response.body.message, '错误', {
+                        $this.$alert(response.response.data.message, '错误', {
                             confirmButtonText: '确定',
                             type: 'error'
                         })
@@ -235,7 +235,7 @@ import LargeFileUpload from './LargeFileUpload.vue';
              * @param row
              */
             downloadFiles(row) {
-                window.open(window.location.href + "api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
+                window.open(window.location.href + "file-online-manager/api/manager/file/download?filename=" + row.name + "&path=" + this.currentPath, "_blank")
             },
             /**
              * 上传文件框确定
