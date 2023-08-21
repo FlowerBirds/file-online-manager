@@ -34,6 +34,8 @@ spec:
             value: "true"
           - name: EXPIRE_TIME
             value: "24"
+          - name: CONTEXT_PATH
+            value: "/fm/"
         ports:
         - containerPort: 8080
         volumeMounts:

@@ -259,7 +259,8 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 $this.$http.post('./api/manager/file/unzip', {
                     path: row.path,
                     name: row.name
-                }).then(() => {
+                }).then((response) => {
+                  console.log(response)
                     var currentNode = $this.$refs.directoryTree.getCurrentNode();
                     $this.loadNode({
                         data: currentNode
@@ -268,14 +269,16 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     });
                     $this.listFile($this.currentPath)
                 }).catch(error => {
+                  console.log(error)
                     $this.$alert(error.response.data.message, '错误', {
                         confirmButtonText: '确定',
                         type: 'error'
                     })
-                    if ($this.loading) {
-                        $this.loading.close(); // 关闭并销毁 loading
-                        $this.loading = null; // 重置 loading 引用
-                    }
+                }).finally(() => {
+                  if ($this.loading) {
+                    $this.loading.close(); // 关闭并销毁 loading
+                    $this.loading = null; // 重置 loading 引用
+                  }
                 })
             },
             /**

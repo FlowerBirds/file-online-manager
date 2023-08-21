@@ -2,7 +2,7 @@ const {
     defineConfig
 } = require('@vue/cli-service')
 module.exports = defineConfig({
-    publicPath: "/",
+    publicPath: "/fm",
     // 产品源码映射，true前端可以看到源码
     productionSourceMap: true,
     // 将es6转化为es5
