@@ -48,6 +48,7 @@
                                         <el-dropdown-item command="zip">压缩</el-dropdown-item>
                                         <el-dropdown-item command="download">下载</el-dropdown-item>
                                         <el-dropdown-item command="onlineEdit">在线编辑</el-dropdown-item>
+                                        <el-dropdown-item command="viewZipFile">查看ZIP文件</el-dropdown-item>
                                     </el-dropdown-menu>
                                 </el-dropdown>
                             </template>
@@ -62,11 +63,18 @@
                  <el-button type="primary" @click="uploadOk">确 定</el-button>
             </span>
         </el-dialog>
+      <el-dialog title="Zip文件查看" :visible.sync="zipViewDialogVisible" width="930px" :before-close="handleClose" destroy-on-close :close-on-click-modal="false">
+            <zip-file-view :currentPath="currentViewZipPath" ref="zipView"></zip-file-view>
+            <span slot="footer" class="dialog-footer">
+              <el-button type="primary" @click="releasePatch">释放补丁</el-button>
+            </span>
+      </el-dialog>
     </div>
 </template>
 
 <script>
 import LargeFileUpload from './LargeFileUpload.vue';
+import ZipFileView from './ViewZipFile.vue'
 
     export default {
         name: 'HomePage',
@@ -79,15 +87,18 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 },
                 currentPath: '.',
                 dialogVisible: false,
+                zipViewDialogVisible: false,
                 searchKey: "",
-                loading: null
+                loading: null,
+                currentViewZipPath:''
             }
         },
         props: {
 
         },
         components: {
-            "large-file-upload": LargeFileUpload
+            "large-file-upload": LargeFileUpload,
+          "zip-file-view": ZipFileView
         },
         mounted() {
             document.title = '文件管理工具';
@@ -111,6 +122,9 @@ import LargeFileUpload from './LargeFileUpload.vue';
                     case 'onlineEdit':
                         this.onlineEdit(row);
                         break
+                    case 'viewZipFile':
+                      this.viewZipFile(row);
+                      break
                 }
             },
             loadNode(node, resolve) {
@@ -244,6 +258,9 @@ import LargeFileUpload from './LargeFileUpload.vue';
                 this.listFile(this.currentPath);
                 this.dialogVisible = false;
             },
+          releasePatch() {
+            this.$refs.zipView.releaseZipFile()
+          },
             /**
              * 解压文件
              * @param row 文件信息
@@ -402,6 +419,10 @@ import LargeFileUpload from './LargeFileUpload.vue';
             } else {
               return (size / (1024 * 1024 * 1024)).toFixed(2) + " GB";
             }
+          },
+          viewZipFile(row) {
+              this.currentViewZipPath = row.path
+              this.zipViewDialogVisible = true
           }
         }
     }

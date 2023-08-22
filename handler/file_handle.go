@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"archive/zip"
+	"bufio"
 	"encoding/json"
+	"errors"
 	"file-online-manager/model"
 	"file-online-manager/util"
 	"fmt"
@@ -397,4 +400,123 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
+}
+
+func ViewZipFileHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := r.URL.Query().Get("path")
+	log.Println("view zip file:", filePath)
+	if !strings.HasSuffix(filePath, ".zip") {
+		response := model.Response{Code: 400, Message: "File type unsupported", Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(jsonResponse)
+		return
+	}
+	zipReader, err := zip.OpenReader(filePath)
+	if err != nil {
+		response := model.Response{Code: 400, Message: err.Error(), Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(jsonResponse)
+		return
+	}
+	defer zipReader.Close()
+	fileNames := make([]model.File, 0)
+	// 遍历ZIP文件中的文件列表
+	for _, file := range zipReader.File {
+		// 输出文件名
+		// fmt.Println(file.Name)
+		fileNames = append(fileNames, model.File{
+			Name:    file.Name,
+			Size:    int64(file.CompressedSize64),
+			ModTime: file.Modified,
+		})
+	}
+
+	response := model.Response{Code: 200, Message: "File view successfully", Data: fileNames}
+	jsonResponse, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
+func ReleaseZipFileHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := r.URL.Query().Get("path")
+	log.Println("release zip file:", filePath)
+	if !strings.HasSuffix(filePath, ".zip") {
+		util.Error(w, errors.New("file type unsupported"))
+		return
+	}
+	dir := filepath.Dir(filePath)
+	// 提取deleted.conf文件
+	zipReader, err := zip.OpenReader(filePath)
+	if err != nil {
+		util.Error(w, err)
+		return
+	}
+	defer zipReader.Close()
+	deleteFiles := make([]model.File, 0)
+	for _, f := range zipReader.File {
+		if f.Name == "delete.conf" {
+			rc, err := f.Open()
+			if err != nil {
+				util.Error(w, err)
+				return
+			}
+			defer rc.Close()
+
+			scanner := bufio.NewScanner(rc)
+			content := make([]string, 0)
+			for scanner.Scan() {
+				content = append(content, scanner.Text())
+			}
+			if err = scanner.Err(); err != nil {
+				util.Error(w, err)
+				return
+			}
+			for _, dFile := range content {
+				if strings.TrimSpace(dFile) == "" {
+					continue
+				}
+				deleteFile := filepath.Join(dir, dFile)
+				log.Println("delete file by delete.conf:", deleteFile)
+				fs, err := os.Stat(deleteFile)
+				if err != nil {
+					log.Printf(err.Error(), "with", dFile)
+					deleteFiles = append(deleteFiles, model.File{
+						Name: dFile,
+						Size: -1,
+					})
+				} else {
+					deleteFiles = append(deleteFiles, model.File{
+						Name:    dFile,
+						Size:    fs.Size(),
+						ModTime: fs.ModTime(),
+					})
+				}
+				os.RemoveAll(deleteFile)
+			}
+			// return
+		}
+	}
+
+	// 执行解压操作
+	cmdErr := util.ExecuteCommand("unzip", "-o", filePath, "-d", dir)
+	if cmdErr != nil {
+		response := model.Response{Code: 500, Message: cmdErr.Error(), Data: nil}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(jsonResponse)
+		log.Println("release zip failed", cmdErr)
+		return
+	}
+
+	response := model.Response{Code: 200, Message: "Patch file unzip successfully", Data: deleteFiles}
+	jsonResponse, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 }

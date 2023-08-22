@@ -57,6 +57,8 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/file/upload", handler.UploadLagerFileHandler).Methods("POST", "GET")
 	router.HandleFunc(contextPath+"api/manager/file/unzip", handler.UnzipFileHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/file/download", handler.DownloadHandler).Methods("GET")
+	router.HandleFunc(contextPath+"api/manager/file/zip/view", handler.ViewZipFileHandler).Methods("GET")
+	router.HandleFunc(contextPath+"api/manager/file/zip/release", handler.ReleaseZipFileHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/folder/list", listFolderHandler).Methods("GET")
 	router.HandleFunc(contextPath+"api/manager/folder/delete", deleteFolderHandler).Methods("DELETE")
 	router.HandleFunc(contextPath+"api/manager/folder/rename", renameFolderHandler).Methods("PUT")
