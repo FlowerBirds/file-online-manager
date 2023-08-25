@@ -9,7 +9,7 @@ import (
 
 func Error(w http.ResponseWriter, err error) {
 	log.Println(err)
-	response := model.Response{Code: 400, Message: err.Error(), Data: nil}
+	response := model.Response{Code: 500, Message: err.Error(), Data: nil}
 	jsonResponse, _ := json.Marshal(response)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)

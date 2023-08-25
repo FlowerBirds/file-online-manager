@@ -520,3 +520,63 @@ func ReleaseZipFileHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
 }
+
+func TextFileViewHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := r.URL.Query().Get("path")
+	log.Println("text file:", filePath)
+	if !strings.HasSuffix(filePath, ".txt") &&
+		!strings.HasSuffix(filePath, ".cfg") &&
+		!strings.HasSuffix(filePath, ".properties") &&
+		!strings.HasSuffix(filePath, ".conf") &&
+		!strings.HasSuffix(filePath, ".md") &&
+		!strings.HasSuffix(filePath, ".yaml") &&
+		!strings.HasSuffix(filePath, ".json") &&
+		!strings.HasSuffix(filePath, ".txt") {
+		util.Error(w, errors.New("file type unsupported"))
+		return
+	}
+
+	content, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		util.Error(w, err)
+		return
+	}
+
+	response := model.Response{Code: 200, Message: "Text file read successfully", Data: string(content)}
+	jsonResponse, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+
+}
+
+func TextFileSaveHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := r.FormValue("path")
+	content := r.FormValue("content")
+	log.Println("text file:", filePath)
+
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); err != nil {
+		util.Error(w, errors.New("file not exists"))
+		return
+	}
+
+	// 文件存在，打开文件进行更新
+	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		util.Error(w, err)
+		return
+	}
+	defer file.Close()
+	_, err = file.WriteString(content)
+	if err != nil {
+		util.Error(w, err)
+		return
+	}
+
+	response := model.Response{Code: 200, Message: "file save successfully", Data: nil}
+	jsonResponse, _ := json.Marshal(response)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
