@@ -72,7 +72,7 @@
             </span>
     </el-dialog>
     <el-dialog ref="viewDialog" title="文本文件查看" :visible.sync="textViewDialogVisible" width="930px" :before-close="handleClose"
-                 :close-on-click-modal="false" @open="beforeViewOpen">
+                 :close-on-click-modal="false" @open="beforeViewOpen" :fullscreen.sync="isMaximized" class="text-view-dialog">
       <text-editor :currentPath="currentViewZipPath" ref="textView"></text-editor>
     </el-dialog>
   </div>
@@ -98,7 +98,8 @@ export default {
       textViewDialogVisible: false,
       searchKey: "",
       loading: null,
-      currentViewZipPath: ''
+      currentViewZipPath: '',
+      isMaximized: true
     }
   },
   props: {},
@@ -445,7 +446,7 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
 .current-path {
   color: chocolate;
 }
@@ -460,5 +461,9 @@ export default {
 
 .el-icon-document {
   color: burlywood;
+}
+
+.text-view-dialog .el-dialog__body {
+  height: calc(100% - 120px);
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div style="height: 100%;">
     <div class="switch-container">
       <el-switch
           v-model="readonlyMode"
@@ -14,7 +14,7 @@
       <el-button class="save-content-btn" v-if="!readonlyMode" @click="saveContent">保存</el-button>
     </div>
 
-    <div ref="editorContainer" style="height: 600px;"></div>
+    <div ref="editorContainer" style="height: calc(100% - 60px);"></div>
   </div>
 </template>
 <script>
@@ -32,6 +32,9 @@ export default {
         { label: 'markdown', value: 'markdown' },
         { label: 'yaml', value: 'yaml' },
         { label: 'json', value: 'json' },
+        { label: 'css', value: 'css' },
+        { label: 'javascript', value: 'javascript' },
+        { label: 'html', value: 'html' },
         { label: 'properties', value: 'properties' }
       ]
     };
@@ -63,8 +66,9 @@ export default {
         this.content = response.data.data;
         this.updateEditor()
       }).catch(error => {
+        this.content = ""
         console.error('加载内容出错', error);
-        this.$alert(error.message, '错误', {
+        this.$alert(error.response.data.message, '错误', {
           confirmButtonText: '确定',
           type: 'error'
         });

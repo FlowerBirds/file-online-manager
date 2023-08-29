@@ -528,9 +528,18 @@ func TextFileViewHandler(w http.ResponseWriter, r *http.Request) {
 		!strings.HasSuffix(filePath, ".cfg") &&
 		!strings.HasSuffix(filePath, ".properties") &&
 		!strings.HasSuffix(filePath, ".conf") &&
+		!strings.HasSuffix(filePath, ".cnf") &&
+		!strings.HasSuffix(filePath, ".log") &&
+		!strings.HasSuffix(filePath, ".out") &&
 		!strings.HasSuffix(filePath, ".md") &&
 		!strings.HasSuffix(filePath, ".yaml") &&
 		!strings.HasSuffix(filePath, ".json") &&
+		!strings.HasSuffix(filePath, ".py") &&
+		!strings.HasSuffix(filePath, ".sql") &&
+		!strings.HasSuffix(filePath, ".sh") &&
+		!strings.HasSuffix(filePath, ".js") &&
+		!strings.HasSuffix(filePath, ".css") &&
+		!strings.HasSuffix(filePath, ".html") &&
 		!strings.HasSuffix(filePath, ".txt") {
 		util.Error(w, errors.New("file type unsupported"))
 		return

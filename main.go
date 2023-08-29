@@ -25,7 +25,7 @@ var loginPassword = ""
 
 func main() {
 	router := mux.NewRouter()
-	contextPath := "/"
+	contextPath := "/fm"
 	path := os.Getenv("CONTEXT_PATH")
 	if len(path) > 0 {
 		contextPath = path
