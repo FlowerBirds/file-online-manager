@@ -28,11 +28,14 @@ jobs:
         run: |
           pwd
           IMAGE_ID=$(date +%s)
-          docker build . --file Dockerfile --tag file-manage:$IMAGE_ID
+          docker buildx create --use
+          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.amd64 --platform=linux/amd64
           docker images
           mkdir image
           echo "===$IMAGE_ID===="
-          docker save -o image/file-manage-$IMAGE_ID.tar file-manage:$IMAGE_ID
+          docker save -o image/file-manage-$IMAGE_ID.amd64.tar file-manage:$IMAGE_ID.amd64
+          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.arm64v8 --platform=linux/arm64/v8
+          docker save -o image/file-manage-$IMAGE_ID.arm64v8.tar file-manage:$IMAGE_ID.arm64v8
           echo "::set-output name=IMAGE_ID::$IMAGE_ID"
           ls -l
           cat .github/release-config.yml
@@ -51,15 +54,25 @@ jobs:
           tag_name: v2.${{ steps.build_image.outputs.IMAGE_ID }}
           draft: false
           prerelease: false
-      - name: Upload Images
-        id: upload-release-image
+      - name: Upload Amd64 Images
+        id: upload-release-amd64-image
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
-          asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.tar
+          asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.amd64.tar
+          asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.amd64.tar
+          asset_content_type: application/octet-stream
+      - name: Upload Arm64v8 Images
+        id: upload-release-arm64v8-image
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./image/file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.arm64v8.tar
+          asset_name: file-manage-${{ steps.build_image.outputs.IMAGE_ID }}.arm64v8.tar
           asset_content_type: application/octet-stream
       - name: Upload K8s Yaml
         id: upload-yaml
