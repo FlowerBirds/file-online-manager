@@ -29,12 +29,12 @@ jobs:
           pwd
           IMAGE_ID=$(date +%s)
           docker buildx create --use
-          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.amd64 --platform=linux/amd64
+          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.amd64 --platform=linux/amd64  --output type=docker
           docker images
           mkdir image
           echo "===$IMAGE_ID===="
           docker save -o image/file-manage-$IMAGE_ID.amd64.tar file-manage:$IMAGE_ID.amd64
-          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.arm64v8 --platform=linux/arm64/v8
+          docker buildx build . --file Dockerfile --tag file-manage:$IMAGE_ID.arm64v8 --platform=linux/arm64/v8  --output type=docker
           docker save -o image/file-manage-$IMAGE_ID.arm64v8.tar file-manage:$IMAGE_ID.arm64v8
           echo "::set-output name=IMAGE_ID::$IMAGE_ID"
           ls -l
