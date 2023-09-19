@@ -16,6 +16,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -120,8 +121,18 @@ func ListFileHandler(root string, w http.ResponseWriter, r *http.Request) {
 		if !file.IsDir() { // check if it's a file
 			size = file.Size()
 		}
+		// 获取底层文件系统特定的属性
+		sysStat := file.Sys()
+		var uid string = "x"
+		var gid string = "x"
+		sys := reflect.ValueOf(sysStat)
+		if sys.String() != "<*syscall.Win32FileAttributeData Value>" {
+			uid = strconv.FormatUint(sys.Elem().FieldByName("Uid").Uint(), 10)
+			gid = strconv.FormatUint(sys.Elem().FieldByName("Gid").Uint(), 10)
+		}
 
-		files = append(files, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(), Size: size, ModTime: file.ModTime(), Id: uuid.New().String()})
+		files = append(files, model.File{Name: file.Name(), Path: path + "/" + file.Name(), IsDir: file.IsDir(),
+			Size: size, ModTime: file.ModTime(), Id: uuid.New().String(), Mode: file.Mode().String(), Gid: gid, Uid: uid})
 		sort.Slice(files, func(i, j int) bool {
 			return files[i].IsDir
 		})

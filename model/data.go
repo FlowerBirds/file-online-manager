@@ -13,6 +13,9 @@ type File struct {
 	Size    int64     `json:"size"`
 	ModTime time.Time `json:"modTime"`
 	Id      string    `json:"id"`
+	Mode    string    `json:"mode"`
+	Uid     string    `json:"uid"`
+	Gid     string    `json:"gid"`
 }
 
 type Response struct {

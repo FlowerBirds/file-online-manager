@@ -1,24 +1,27 @@
 <template>
-  <div class="home-page">
+  <div class="home-page" @click="handlePageClick">
     <el-container style="height: 100%;">
       <el-aside width="400px">
         <el-header height="50px">
           <el-button type="primary" @click="uploadFile">上传</el-button>
           <el-button type="primary" @click="createFolder">创建</el-button>
-          <div style="height: 30px; padding: 0px 0; line-height: 30px;"><span class="el-icon-coordinate">当前位置：
-                        </span><span class="current-path">{{ currentPath }}</span></div>
+<!--          <div style="height: 30px; padding: 0px 0; line-height: 30px;"><span class="el-icon-coordinate">当前位置：
+                        </span><span class="current-path">{{ currentPath }}</span></div>-->
         </el-header>
         <el-main>
           <el-tree :data="treeData" @node-click="handleNodeClick" :props="defaultProps" :load="loadNode"
-                   ref="directoryTree" node-key="id" lazy></el-tree>
+                   ref="directoryTree" node-key="id" lazy @node-contextmenu="handleContextMenu">
+            <span class="custom-node" slot-scope="{ node }">{{ node.label }}</span>
+          </el-tree>
         </el-main>
       </el-aside>
       <el-main style="">
         <div id="table-container">
           <el-input placeholder="请输入名称" prefix-icon="el-icon-search" v-model="searchKey"></el-input>
+          <div class="full-path-nav" :title="currentPath"><span class="el-icon-coordinate">当前位置： </span> {{currentPath}}</div>
           <el-table
               :data="tableData.filter(data => !searchKey || data.name.toLowerCase().includes(searchKey.toLowerCase()))"
-              style="width: 100%">
+              style="width: 100%" resizable border>
             <el-table-column prop="name" label="名称" width="300"></el-table-column>
             <el-table-column prop="size" label="大小" width="160" :formatter="fileSizeFormat"></el-table-column>
             <el-table-column prop="type" label="类型" width="60">
@@ -27,7 +30,10 @@
                 <i class="el-icon-document" v-if="!scope.row.isDir"></i>
               </template>
             </el-table-column>
-            <el-table-column sortable prop="modTime" label="修改时间"></el-table-column>
+            <el-table-column sortable prop="modTime" label="修改时间" min-width="100" max-width="400"></el-table-column>
+            <el-table-column sortable prop="mode" label="权限" width="160"></el-table-column>
+            <el-table-column prop="gid" label="GID" width="60"></el-table-column>
+            <el-table-column prop="gid" label="UID" width="60"></el-table-column>
             <el-table-column label="操作" align="left">
               <template slot-scope="scope">
                 <el-button type="primary" size="small" icon="el-icon-edit"
@@ -82,6 +88,7 @@
 import LargeFileUpload from './LargeFileUpload.vue';
 import ZipFileView from './ViewZipFile.vue'
 import TextEditor from "@/components/TextEditor";
+import ContextMenu from '@/components/ContextMenu.vue';
 
 export default {
   name: 'HomePage',
@@ -99,14 +106,21 @@ export default {
       searchKey: "",
       loading: null,
       currentViewZipPath: '',
-      isMaximized: true
+      isMaximized: true,
+      menuItems: [
+        { label: '变更用户权限', action: 'chown', icon: 'el-icon-user' },
+        { label: '更改RWX权限', action: 'chmod', icon: 'el-icon-brush' },
+      ],
+      showMenu: false, // 是否显示右键菜单
+      menuX: 0, // 右键菜单横坐标
+      menuY: 0, // 右键菜单纵坐标
     }
   },
   props: {},
   components: {
     "large-file-upload": LargeFileUpload,
     "zip-file-view": ZipFileView,
-    "text-editor": TextEditor
+    "text-editor": TextEditor,
   },
   mounted() {
     document.title = '文件管理工具';
@@ -440,7 +454,35 @@ export default {
     viewZipFile(row) {
       this.currentViewZipPath = row.path
       this.zipViewDialogVisible = true
-    }
+    },
+    handleContextMenu(event, data, node) {
+      event.preventDefault(); // 阻止默认的右键菜单事件
+      this.menuX = event.clientX;
+      this.menuY = event.clientY;
+      this.showMenu = true;
+    },
+    handleMenuClick(item) {
+      this.showMenu = false
+      switch (item.action) {
+        case 'copy':
+          // 复制操作
+          break;
+        case 'paste':
+          // 粘贴操作
+          break;
+        case 'delete':
+          // 删除操作
+          break;
+        default:
+          break;
+      }
+    },
+    handlePageClick(event) {
+      // 点击页面其他地方时，隐藏右键菜单
+      if (this.showMenu) {
+        this.showMenu = false;
+      }
+    },
   }
 }
 </script>
@@ -453,6 +495,7 @@ export default {
 
 .el-main {
   margin-left: 20px;
+  padding-top: 10px;
 }
 
 .el-icon-folder {
@@ -465,5 +508,13 @@ export default {
 
 .text-view-dialog .el-dialog__body {
   height: calc(100% - 120px);
+}
+.full-path-nav {
+  height: 28px;
+  line-height: 28px;
+  color: chocolate;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
