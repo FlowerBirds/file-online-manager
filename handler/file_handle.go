@@ -378,6 +378,11 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	// 获取请求的文件名
 	filename := r.URL.Query().Get("filename")
 	filePath := r.URL.Query().Get("path")
+
+	if strings.Index(filePath, ".") == 0 {
+		filePath = RootPath + "/" + filePath
+	}
+
 	log.Println(filename)
 	log.Println(filePath)
 	// 根据文件名的后缀判断文件类型
