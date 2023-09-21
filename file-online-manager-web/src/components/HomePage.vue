@@ -70,14 +70,14 @@
                  <el-button type="primary" @click="uploadOk">确 定</el-button>
             </span>
     </el-dialog>
-    <el-dialog title="Zip文件查看" :visible.sync="zipViewDialogVisible" width="930px" :before-close="handleClose"
+    <el-dialog title="Zip文件查看" :visible.sync="zipViewDialogVisible" v-if="zipViewDialogVisible" width="930px" :before-close="handleClose"
                destroy-on-close :close-on-click-modal="false">
       <zip-file-view :currentPath="currentViewZipPath" ref="zipView"></zip-file-view>
       <span slot="footer" class="dialog-footer">
               <el-button type="primary" @click="releasePatch">释放补丁</el-button>
             </span>
     </el-dialog>
-    <el-dialog ref="viewDialog" title="文本文件查看" :visible.sync="textViewDialogVisible" width="930px" :before-close="handleClose"
+    <el-dialog ref="viewDialog" title="文本文件查看" :visible.sync="textViewDialogVisible" v-if="textViewDialogVisible" width="930px" :before-close="handleClose"
                  :close-on-click-modal="false" @open="beforeViewOpen" :fullscreen.sync="isMaximized" class="text-view-dialog">
       <text-editor :currentPath="currentViewZipPath" ref="textView"></text-editor>
     </el-dialog>
