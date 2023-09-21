@@ -37,7 +37,7 @@ func DeleteFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("remove file: " + filePath)
 	// 使用RemoveAll则删除文件夹，暂时不实现
-	err := os.Remove(filePath)
+	err := os.RemoveAll(filePath)
 	if err != nil {
 		response := model.Response{Code: 500, Message: "Failed to delete file", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
@@ -108,7 +108,7 @@ func ListFileHandler(root string, w http.ResponseWriter, r *http.Request) {
 	}
 	dir, err := ioutil.ReadDir(path)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		response := model.Response{Code: 500, Message: "Failed to list files", Data: nil}
 		jsonResponse, _ := json.Marshal(response)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

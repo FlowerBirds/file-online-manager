@@ -63,7 +63,7 @@
         </div>
       </el-main>
     </el-container>
-    <el-dialog title="上传文件" :visible.sync="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close
+    <el-dialog title="上传文件" :visible.sync="dialogVisible" v-if="dialogVisible" width="930px" :before-close="handleClose" destroy-on-close
                :close-on-click-modal="false">
       <large-file-upload :currentPath="currentPath"></large-file-upload>
       <span slot="footer" class="dialog-footer">
@@ -170,7 +170,7 @@ export default {
      */
     deleteFile(row) {
       let $this = this;
-      this.$confirm("是否删除文件：" + row.name, "确认").then(function () {
+      this.$confirm("是否删除文件(夹)：" + row.name, "确认").then(function () {
         $this.$http.delete('./api/manager/file/delete?path=' + row.path, {
           path: row.path
         }).then(response => {
@@ -424,11 +424,13 @@ export default {
           $this.loading = null; // 重置 loading 引用
         }
       }, response => {
-        console.log(response.body)
+        console.log(response.response)
+        $this.tableData = []
         if ($this.loading) {
           $this.loading.close(); // 关闭并销毁 loading
           $this.loading = null; // 重置 loading 引用
         }
+        this.$message.warning("加载失败，请刷新文件夹列表后重试")
       })
     },
     onlineEdit(row) {
