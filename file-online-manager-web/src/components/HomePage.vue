@@ -312,7 +312,11 @@ export default {
         }, (data) => {
           $this.$refs.directoryTree.updateKeyChildren(currentNode.id, data);
         });
-        $this.listFile($this.currentPath)
+        $this.listFile($this.currentPath);
+        $this.$message({
+          message: "解压成功",
+          type: 'success'
+        });
       }).catch(error => {
         console.log(error)
         $this.$alert(error.response.data.message, '错误', {
