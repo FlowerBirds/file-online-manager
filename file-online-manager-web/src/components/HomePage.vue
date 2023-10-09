@@ -155,7 +155,14 @@ export default {
         path = ''
       }
       this.$http.get('./api/manager/folder/list?path=' + path, {}).then(response => {
-        resolve(response.data.data)
+        if (path == '') {
+          let root = {id: '-1', name: 'root', path: '.', children: []};
+          root.children = response.data.data;
+          resolve([root])
+        } else {
+          resolve(response.data.data)
+        }
+
       }, response => {
         console.log(response.body)
       })
@@ -414,7 +421,9 @@ export default {
     listFolder() {
       let $this = this
       this.$http.get('./api/manager/folder/list', {}).then(response => {
-        $this.treeData = response.data.data
+        let root = {id: '-1', name: 'root', path: '.'}
+        root.children = response.data.data
+        $this.treeData = [root]
       }, response => {
         console.log(response.body)
       })

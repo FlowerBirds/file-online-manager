@@ -150,6 +150,10 @@ func listFolderHandler(w http.ResponseWriter, r *http.Request) {
 	if len(path) == 0 {
 		path = root
 	}
+	// 解决文件夹展示位置为当前进程启动位置而不是环境变量设置的位置
+	if strings.Index(path, ".") == 0 {
+		path = root + "/" + path
+	}
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		response := model.Response{Code: 500, Message: "Failed to list folders", Data: nil}
