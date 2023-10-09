@@ -351,7 +351,7 @@ func UnzipFileHandler(w http.ResponseWriter, r *http.Request) {
 	dir := filepath.Dir(filePath)
 	var cmdErr error = nil
 	if strings.HasSuffix(fileName, ".zip") {
-		cmdErr = util.ExecuteCommand("unzip -o ", filePath, "-d", dir)
+		cmdErr = util.ExecuteCommand("unzip", "-o", filePath, "-d", dir)
 	} else if strings.HasSuffix(fileName, ".tar.gz") {
 		cmdErr = util.ExecuteCommand("tar", "-xzf", filePath, "-C", dir)
 	} else if strings.HasSuffix(fileName, ".tar") {
