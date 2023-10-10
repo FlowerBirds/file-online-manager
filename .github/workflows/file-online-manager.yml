@@ -19,11 +19,12 @@ jobs:
         with:
           node-version: '16.x'
       - name: Node Modules Cache
-        id: node-modules-cache
+        id: npm-cache
         uses: actions/cache@v3
         with:
           path: ./file-online-manager-web/node_modules
-          key: node_modules-cache
+          key: node_modules-cache-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: node_modules-cache-
       - name: build-vue
         run: |
           cd file-online-manager-web
