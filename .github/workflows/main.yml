@@ -9,11 +9,11 @@ jobs:
     steps:
       - shell: bash
         env:
-          SUPER_SECRET: ${{ secrets.USERNAME }}
+          SUPER_SECRET: ${{ secrets.DOCKERHUB_TOKEN }}
           USERNAME: ${{ vars.USERNAME }}
         run: |
           echo ">>> $SUPER_SECRET"
-          echo ">>> ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo ">>> ${{ secrets.DOCKERHUB_TOKEN }}"
           echo ">>> $USERNAME"
       - name: Use the secret
         run: echo ${{ secrets.DOCKERHUB_USERNAME }}
