@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Test Build
 
 on:
   workflow_dispatch:
