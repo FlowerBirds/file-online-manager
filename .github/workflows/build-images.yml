@@ -20,7 +20,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./file-online-manager-web/node_modules
-          key: node_modules-cache-${{ hashFiles('**/package-lock.json') }}
+          key: node_modules-cache-${{ hashFiles('**/package.json') }}
           restore-keys: node_modules-cache-
       - name: build-vue
         run: |
