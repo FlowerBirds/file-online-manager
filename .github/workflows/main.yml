@@ -7,18 +7,10 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: use nodejs
-        uses: actions/setup-node@v1
-        with:
-          node-version: '16.x'
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       - shell: bash
         env:
-          SUPER_SECRET: ${{ secrets.DOCKERHUB_USERNAME }}
+          SUPER_SECRET: ${{ secrets.USERNAME }}
+          USERNAME: ${{ vars.USERNAME }}
         run: |
           echo ">>> $SUPER_SECRET"
           echo ">>> ${{ secrets.DOCKERHUB_USERNAME }}"
