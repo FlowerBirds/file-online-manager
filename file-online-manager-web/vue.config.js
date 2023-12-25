@@ -11,11 +11,13 @@ module.exports = defineConfig({
     // 开发时的代理
     devServer: {
         port: 8081,
+        compress: false,
         proxy: {
             '/api': {
                 // target: 'http://172.29.190.147:30001/',
                 target: "http://localhost:8080/",
-                changeOrigin: true
+                changeOrigin: true,
+                ws: true
             }
         }
     },

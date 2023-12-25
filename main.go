@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"file-online-manager/handler"
+	"file-online-manager/handler/k8sservice"
 	"file-online-manager/model"
 	"file-online-manager/util"
 	"fmt"
@@ -67,6 +68,11 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/folder/copy", copyFolderHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/create", createFolderHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/folder/zip", zipFileHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/k8s/list-pods", k8sservice.ListPodHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/k8s/restart-pod", k8sservice.RestartPodHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/k8s/list-namespace", k8sservice.ListNamespaceHandler).Methods("POST")
+	router.HandleFunc(contextPath+"api/manager/k8s/pod-stream-logs", k8sservice.PodStreamLogHandler).Methods("GET")
+
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
 	log.Println("server started at port 8080")
 	http.ListenAndServe(":8080", router)

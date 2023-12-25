@@ -2,9 +2,9 @@
   <div class="home-page" @click="handlePageClick">
     <el-container style="height: 100%;">
       <el-aside width="400px">
-        <el-header height="50px">
-          <el-button type="primary" @click="uploadFile">上传</el-button>
-          <el-button type="primary" @click="createFolder">创建</el-button>
+        <el-header height="30px">
+          <el-button type="primary" @click="uploadFile" class="fm-btn">上传</el-button>
+          <el-button type="primary" @click="createFolder" class="fm-btn">创建</el-button>
 <!--          <div style="height: 30px; padding: 0px 0; line-height: 30px;"><span class="el-icon-coordinate">当前位置：
                         </span><span class="current-path">{{ currentPath }}</span></div>-->
         </el-header>
@@ -531,5 +531,9 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.fm-btn,.el-button {
+  padding: 8px 12px;
+  font-size: 12px;
 }
 </style>
