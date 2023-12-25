@@ -41,7 +41,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push latest
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -54,7 +54,7 @@ jobs:
         id: branch_name
         run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
       - name: Build and push branch
-        if: ${{ github.ref != 'refs/heads/main' }}
+        if: ${{ github.ref != 'refs/heads/master' }}
         uses: docker/build-push-action@v5
         with:
           context: .
