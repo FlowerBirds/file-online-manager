@@ -50,6 +50,9 @@ jobs:
           tags: |
             flowerbirds/file-manage:latest
             ghcr.io/flowerbirds/file-manage:latest
+      - name: Set branch name
+        id: branch_name
+        run: echo "::set-output name=branch::$(echo ${GITHUB_REF#refs/heads/})"
       - name: Build and push branch
         if: ${{ github.ref != 'refs/heads/main' }}
         uses: docker/build-push-action@v5
@@ -58,5 +61,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            flowerbirds/file-manage:${GITHUB_REF#refs/heads/}
-            ghcr.io/flowerbirds/file-manage:${GITHUB_REF#refs/heads/}
+            flowerbirds/file-manage:${{ steps.branch_name.outputs.branch }}
+            ghcr.io/flowerbirds/file-manage:${{ steps.branch_name.outputs.branch }}
