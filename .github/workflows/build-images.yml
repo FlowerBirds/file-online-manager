@@ -2,9 +2,7 @@ name: Build Docker Image
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
   docker:
@@ -42,7 +40,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push latest
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -51,3 +50,13 @@ jobs:
           tags: |
             flowerbirds/file-manage:latest
             ghcr.io/flowerbirds/file-manage:latest
+      - name: Build and push branch
+        if: ${{ github.ref != 'refs/heads/main' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            flowerbirds/file-manage:${GITHUB_REF#refs/heads/}
+            ghcr.io/flowerbirds/file-manage:${GITHUB_REF#refs/heads/}
