@@ -1,4 +1,4 @@
-FROM  golang:1.18 as build
+FROM  golang:1.19 as build
 ENV GO111MODULE=on
 ENV CGO_ENABLED=0
 WORKDIR /app
