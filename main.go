@@ -72,6 +72,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/k8s/restart-pod", k8sservice.RestartPodHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/k8s/list-namespace", k8sservice.ListNamespaceHandler).Methods("POST")
 	router.HandleFunc(contextPath+"api/manager/k8s/pod-stream-logs", k8sservice.PodStreamLogHandler).Methods("GET")
+	router.HandleFunc(contextPath+"api/manager/k8s/view-pod-yaml", k8sservice.ViewPodYamlHandler).Methods("GET")
 
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
 	log.Println("server started at port 8080")

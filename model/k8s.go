@@ -14,3 +14,8 @@ type PodInfo struct {
 type Namespace struct {
 	Name string `json:"name"`
 }
+
+type DeploymentInfo struct {
+	Name string `json:"name"`
+	Yaml string `json:"yaml"`
+}

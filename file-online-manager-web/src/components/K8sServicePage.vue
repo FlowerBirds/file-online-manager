@@ -34,7 +34,7 @@
             </el-button>
             <el-dropdown-menu slot="dropdown">
               <el-dropdown-item command="viewYaml">查看YAML</el-dropdown-item>
-              <el-dropdown-item command="viewLogs">查看日期</el-dropdown-item>
+              <el-dropdown-item command="viewLogs">查看日志</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
         </template>
@@ -43,24 +43,32 @@
   </div>
   <el-dialog ref="viewLogDialog" :title="logTitle" :visible.sync="logViewDialogVisible" v-if="logViewDialogVisible" width="930px" height="600px" :before-close="handleClose"
              :close-on-click-modal="false" @open="beforeLogViewOpen" :fullscreen.sync="isMaximized" class="text-view-dialog">
-    <pre style="height: 600px; overflow-y: scroll; overflow-x: auto;  white-space: pre-line; word-wrap: break-word; word-break: break-all;">{{ logStreamData }}</pre>
+<!--    <pre style="height: 600px; overflow-y: scroll; overflow-x: auto;  white-space: pre-line; word-wrap: break-word; word-break: break-all;">{{ logStreamData }}</pre>-->
+    <view-editor :content="logStreamData" mode="log"></view-editor>
+  </el-dialog>
+  <el-dialog ref="podYamlViewDialog" :title="podYamlTitle" :visible.sync="podYamlViewDialogVisible" v-if="podYamlViewDialogVisible" width="930px" :before-close="handleClose"
+             :close-on-click-modal="false"  :fullscreen.sync="isMaximized" class="text-view-dialog">
+    <view-editor :content="podYaml" mode="yaml"></view-editor>
   </el-dialog>
 </div>
 </template>
 
 <script>
-import axios from 'axios';
+import ViewEditor from "@/components/ViewEditor";
 
 export default {
   name: "K8sServicePage",
   data() {
     return {
       logViewDialogVisible: false,
+      podYamlViewDialogVisible: false,
       isMaximized: false,
       selectedNamespace: 'default', // 默认选中的值
       logStreamData: "",
+      podYaml: "aaa\n\n\naaa",
       logEventSource: null,
       logTitle: "查看日志",
+      podYamlTitle: "查看YAML",
       options: [
         { value: 'default', label: 'default' },
         { value: 'tempo611', label: 'tempo611' },
@@ -80,6 +88,9 @@ export default {
         }
       ]
     };
+  },
+  components: {
+    "view-editor": ViewEditor,
   },
   mounted() {
     //
@@ -115,6 +126,7 @@ export default {
       if (this.logEventSource) {
         this.logEventSource.close()
       }
+      this.podYaml = ""
       done();
     },
     handleCommand(command, row) {
@@ -128,7 +140,22 @@ export default {
       }
     },
     viewPodYaml(row) {
-
+      this.podYamlViewDialogVisible = true
+      this.$http.get('./api/manager/k8s/view-pod-yaml?name=' + row.name + "&namespace=" + this.selectedNamespace, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }).then(response => {
+        console.log(response)
+        this.podYaml = response.data.data.yaml
+        this.podYamlTitle = response.data.data.name + " YAML信息（Deployment）"
+      }, responseData => {
+        console.log(responseData)
+        this.$alert(responseData.response.data.message, '错误', {
+          confirmButtonText: '确定',
+          type: 'error'
+        })
+      })
     },
     beforeLogViewOpen() {
 

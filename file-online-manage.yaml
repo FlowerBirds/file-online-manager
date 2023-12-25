@@ -1,4 +1,42 @@
  # 在k8s中部署file-manage服务
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+ name: fmuser
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+ name: fmuser-role
+rules:
+ - apiGroups: [""]
+   resources: ["pods", "namespaces"]
+   verbs: ["get", "list", "watch"]
+ - apiGroups: [""]
+   resources: ["pods/log"]
+   verbs: ["get", "list", "watch"]
+ - apiGroups: [""]
+   resources: ["pods"]
+   verbs: ["delete"]
+ - apiGroups: [""]
+   resources: ["namespaces"]
+   verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+ name: fmuser-rolebinding
+subjects:
+ - kind: ServiceAccount
+   name: fmuser
+   namespace: default
+roleRef:
+ kind: ClusterRole
+ name: fmuser-role
+ apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,9 +53,10 @@ spec:
       labels:
         app: file-manage
     spec:
+      serviceAccountName: fmuser
       containers:
       - name: file-manage
-        image: file-manage:latest
+        image: flowerbirds/file-manage:latest
         imagePullPolicy: IfNotPresent
         env:
           - name: MANAGE_USERNAME
@@ -36,15 +75,17 @@ spec:
             value: "24"
           - name: CONTEXT_PATH
             value: "/fm/"
+          - name: ROOT_PATH
+            value: "/opt"
         ports:
         - containerPort: 8080
         volumeMounts:
         - name: apps
-          mountPath: /app/apps
+          mountPath: /opt/apps
         - name: file
-          mountPath: /app/file
+          mountPath: /opt/file
         - name: resource-home
-          mountPath: /app/resource-home
+          mountPath: /opt/resource-home
       volumes:
       - name: apps
         hostPath:
@@ -80,3 +121,4 @@ spec:
  data:
    password: MTIzNDU2
    username: YWRtaW4=
+

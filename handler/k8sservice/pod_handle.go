@@ -1,14 +1,19 @@
 package k8sservice
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"file-online-manager/model"
 	"file-online-manager/util"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -220,12 +225,16 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 
 	name := r.URL.Query().Get("name")
 	namespace := r.URL.Query().Get("namespace")
+	hostname := os.Getenv("HOSTNAME")
 
 	if name == "" || namespace == "" {
 		util.Error(w, errors.New("invalid query param"))
 		return
 	}
-
+	if name == hostname {
+		util.Error(w, errors.New("can't view itself logs due to cause to recursive access and leads to an infinite loop"))
+		return
+	}
 	log.Println("read logs: ", namespace, name)
 
 	flusher, ok := w.(http.Flusher)
@@ -257,11 +266,11 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer logs.Close()
 
-		buf := make([]byte, 1024)
+		buf := make([]byte, 1024*1024)
 		full := true
 		reverseStr := ""
 		for {
-			log.Println("read data")
+			// log.Println("read data")
 			size, err := logs.Read(buf)
 			if size > 0 {
 				if buf[size-1] != 10 {
@@ -299,6 +308,104 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		flusher.Flush() // 刷新响应，将数据发送到客户端
+	} else {
+		util.Error(w, errors.New("invalid k8s client"))
+		return
+	}
+}
+
+func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	namespace := r.URL.Query().Get("namespace")
+	if name == "" || namespace == "" {
+		util.Error(w, errors.New("invalid query param"))
+		return
+	}
+	log.Println("view yaml: ", namespace, name)
+	clientset := InitK8sClient()
+	if clientset != nil {
+		pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			log.Printf("Failed to get pod: %v", err)
+			util.Error(w, err)
+			return
+		}
+		ownerReferences := pod.ObjectMeta.OwnerReferences
+		log.Println(ownerReferences)
+		if len(ownerReferences) == 0 {
+			util.Error(w, errors.New("Pod does not have an owner"))
+			return
+		}
+		replicaSetName := ownerReferences[0].Name
+		replicaSet, err := clientset.AppsV1().ReplicaSets(namespace).Get(context.TODO(), replicaSetName, metav1.GetOptions{})
+		if err != nil {
+			log.Println(err)
+			util.Error(w, err)
+			return
+		}
+
+		// 获取 ReplicaSet 的 ownerReferences
+		ownerReferences = replicaSet.ObjectMeta.OwnerReferences
+		if len(ownerReferences) == 0 {
+			err = errors.New("ReplicaSet does not have an owner")
+			log.Println(err)
+			util.Error(w, err)
+			return
+		}
+		deploymentName := ownerReferences[0].Name
+		deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+		if err != nil {
+			log.Printf("Failed to get deployment: %v", err)
+			util.Error(w, err)
+			return
+		}
+
+		deploymentYAML, err := deploymentToYAML(deployment)
+		// log.Println(deploymentYAML)
+		if err != nil {
+			fmt.Printf("Failed to convert deployment to YAML: %v", err)
+			util.Error(w, err)
+			return
+		}
+		depInfo := model.DeploymentInfo{
+			Name: deploymentName,
+			Yaml: deploymentYAML,
+		}
+		response := model.Response{Code: 200, Message: "view deployment yaml successfully", Data: depInfo}
+		jsonResponse, _ := json.Marshal(response)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsonResponse)
+	} else {
+		util.Error(w, errors.New("invalid k8s client"))
+		return
+	}
+}
+
+func deploymentToYAML(deployment *appsv1.Deployment) (string, error) {
+	yamlContent, err := runtime.Encode(unstructured.UnstructuredJSONScheme, deployment)
+	if err != nil {
+		return "", err
 	}
 
+	// 打印YAML内容
+	var buf bytes.Buffer
+	_, err = buf.WriteString(string(yamlContent))
+	if err != nil {
+		return "", err
+	}
+
+	var obj interface{}
+	err = json.Unmarshal([]byte(buf.String()), &obj)
+	if err != nil {
+		return "", err
+	}
+
+	// 将数据转换为YAML格式
+	yamlData, err := yaml.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+
+	return string(yamlData), nil
 }
