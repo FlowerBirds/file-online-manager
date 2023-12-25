@@ -15,6 +15,7 @@ jobs:
           echo ">>> $SUPER_SECRET"
           echo ">>> ${{ secrets.DOCKERHUB_TOKEN }}"
           echo ">>> $USERNAME"
+          echo ${{ github.ref }}
       - name: Use the secret
         run: echo ${{ secrets.DOCKERHUB_USERNAME }}
       - name: Login to Docker Hub
