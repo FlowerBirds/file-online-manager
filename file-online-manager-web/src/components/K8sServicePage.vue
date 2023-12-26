@@ -13,9 +13,16 @@
     <el-button type="primary" size="small" icon="el-icon-refresh" class="refresh-btn"
                @click="refresh()"
                title="刷新"></el-button>
+    <el-button type="primary" size="small" icon="el-icon-refresh-right" class="refresh-btn"
+               @click="restartPodAll()" v-show="hasSelected"
+               title="全部重启"></el-button>
   </div>
   <div>
-    <el-table :data="tableData">
+    <el-table :data="tableData"
+              :selection="selection"
+              @select="handleSelectionChange"
+              @select-all="handleSelectionChange">
+      <el-table-column type="selection" width="55"></el-table-column>
       <el-table-column prop="name" label="名称" width="440"></el-table-column>
       <el-table-column prop="ready" label="实例数" width="80"></el-table-column>
       <el-table-column prop="status" label="状态" ></el-table-column>
@@ -65,28 +72,15 @@ export default {
       isMaximized: false,
       selectedNamespace: 'default', // 默认选中的值
       logStreamData: "",
-      podYaml: "aaa\n\n\naaa",
+      podYaml: "",
       logEventSource: null,
       logTitle: "查看日志",
       podYamlTitle: "查看YAML",
+      selection: [],
       options: [
         { value: 'default', label: 'default' },
-        { value: 'tempo611', label: 'tempo611' },
-        { value: 'openfaas', label: 'openfaas' }
       ],
-      tableData: [
-        {
-          "name": "file-manage-df4856c55-n2b2r",
-          "ready": "1/1",
-          "status": "Running",
-          "restarts": "24 (3h34m ago)",
-          "age": "84d",
-          "ip": "10.42.0.248",
-          "node": "laptop-tc4a0scv",
-          "nominatedNode": "<none>",
-          "readinessGates": "<none>"
-        }
-      ]
+      tableData: []
     };
   },
   components: {
@@ -95,17 +89,35 @@ export default {
   mounted() {
     //
   },
+  computed: {
+    hasSelected() {
+      return this.selection.length > 0;
+    }
+  },
   methods: {
     init() {
       this.listNamespace()
       this.listPods()
     },
+    handleSelectionChange(selection) {
+      this.selection = selection;
+    },
     restartPod(row) {
+      this.restartPodAll([row])
+    },
+    restartPodAll(rows) {
+      if (!rows) {
+        rows = this.selection
+      }
+      let name = ""
+      for (let i = 0; i < rows.length; i++) {
+        name += rows[i].name + ","
+      }
       let $this = this;
       const formData = new FormData();
       formData.append('namespace', this.selectedNamespace);
-      formData.append('name', row.name);
-      this.$confirm("是否重启该pod：" + row.name, "确认").then(function () {
+      formData.append('name', name);
+      this.$confirm("是否重启pod", "确认").then(function () {
         $this.$http.postForm('./api/manager/k8s/restart-pod', formData, {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -113,9 +125,9 @@ export default {
         }).then(response => {
           console.log(response)
           $this.listPods()
-        }, response => {
-          console.log(response)
-          $this.$alert(response.message, '错误', {
+        }, axiosError => {
+          console.log(axiosError)
+          $this.$alert(axiosError.response.data.message, '错误', {
             confirmButtonText: '确定',
             type: 'error'
           })

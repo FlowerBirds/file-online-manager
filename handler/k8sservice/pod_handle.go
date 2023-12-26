@@ -31,14 +31,14 @@ func InitK8sClient() *kubernetes.Clientset {
 	if kubeconfig != "" {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
-			log.Println("load config failed: ", err)
+			util.Println("load config failed: ", err)
 			config = nil
 		}
 	}
 	if config == nil {
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			log.Println("load in cluster config failed: ", err)
+			util.Println("load in cluster config failed: ", err)
 			config = nil
 		}
 	}
@@ -46,7 +46,7 @@ func InitK8sClient() *kubernetes.Clientset {
 	if config != nil {
 		clientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
-			log.Println(err)
+			util.Println(err)
 			return nil
 		}
 		return clientset
@@ -61,23 +61,37 @@ func RestartPodHandler(w http.ResponseWriter, r *http.Request) {
 		util.Error(w, errors.New("empty pod params"))
 		return
 	}
-	log.Println("restart:", namespace, name)
+	if namespace == "kube-system" {
+		util.Error(w, errors.New("forbidden to restart kube-system pod"))
+		return
+	}
+	util.Println("restart:", namespace, name)
+	hostname := os.Getenv("HOSTNAME")
 	clientset := InitK8sClient()
 	if clientset != nil {
 		ctx := context.Background()
-		pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			util.Error(w, err)
-			return
-		}
-		log.Println("found pod", pod.Name)
-		// newPod := pod.DeepCopy()
-		// newPod.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
 
-		err = clientset.CoreV1().Pods(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-		if err != nil {
-			util.Error(w, err)
-			return
+		for _, podName := range strings.Split(name, ",") {
+			if podName == "" {
+				continue
+			}
+			_, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+			if err != nil {
+				util.Error(w, err)
+				return
+			}
+			// forbidden to restart itself
+			if hostname == podName {
+				util.Println("Ignore restart pod: ", podName)
+				continue
+			}
+
+			util.Println("Found and delete pod: ", podName)
+			err = clientset.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{})
+			if err != nil {
+				util.Error(w, err)
+				return
+			}
 		}
 		response := model.Response{Code: 200, Message: "Restart pod successfully", Data: true}
 		jsonResponse, _ := json.Marshal(response)
@@ -99,7 +113,7 @@ func ListPodHandler(w http.ResponseWriter, r *http.Request) {
 	if clientset != nil {
 		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			log.Println(err)
+			util.Println(err)
 			util.Error(w, err)
 			return
 		}
@@ -142,7 +156,7 @@ func calculateAge(status v1.PodStatus) string {
 	}
 	now := metav1.Now()
 	duration := now.Sub(creationTime.Time)
-	// log.Println(duration.String())
+	// util.Println(duration.String())
 	duration, err := time.ParseDuration(duration.String())
 	if err != nil {
 		return ""
@@ -195,7 +209,7 @@ func ListNamespaceHandler(w http.ResponseWriter, r *http.Request) {
 	if clientset != nil {
 		namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			log.Println(err)
+			util.Println(err)
 			util.Error(w, err)
 			return
 		}
@@ -235,7 +249,7 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 		util.Error(w, errors.New("can't view itself logs due to cause to recursive access and leads to an infinite loop"))
 		return
 	}
-	log.Println("read logs: ", namespace, name)
+	util.Println("read logs: ", namespace, name)
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -270,7 +284,7 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 		full := true
 		reverseStr := ""
 		for {
-			// log.Println("read data")
+			// util.Println("read data")
 			size, err := logs.Read(buf)
 			if size > 0 {
 				if buf[size-1] != 10 {
@@ -285,12 +299,12 @@ func PodStreamLogHandler(w http.ResponseWriter, r *http.Request) {
 					}
 					if !full && i == len(readlogs)-1 {
 						reverseStr += text
-						// log.Println("reverse " + reverseStr)
+						// util.Println("reverse " + reverseStr)
 						continue
 					}
 					data := []byte("data: " + text + "\n\n")
 					if i == 0 && len(reverseStr) > 0 {
-						// log.Println("add reverse " + reverseStr + text)
+						// util.Println("add reverse " + reverseStr + text)
 						data = []byte("data: " + reverseStr + text + "\n\n")
 						reverseStr = ""
 					}
@@ -321,7 +335,7 @@ func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
 		util.Error(w, errors.New("invalid query param"))
 		return
 	}
-	log.Println("view yaml: ", namespace, name)
+	util.Println("view yaml: ", namespace, name)
 	clientset := InitK8sClient()
 	if clientset != nil {
 		pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
@@ -331,7 +345,7 @@ func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ownerReferences := pod.ObjectMeta.OwnerReferences
-		log.Println(ownerReferences)
+		util.Println(ownerReferences)
 		if len(ownerReferences) == 0 {
 			util.Error(w, errors.New("Pod does not have an owner"))
 			return
@@ -339,7 +353,7 @@ func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
 		replicaSetName := ownerReferences[0].Name
 		replicaSet, err := clientset.AppsV1().ReplicaSets(namespace).Get(context.TODO(), replicaSetName, metav1.GetOptions{})
 		if err != nil {
-			log.Println(err)
+			util.Println(err)
 			util.Error(w, err)
 			return
 		}
@@ -348,7 +362,7 @@ func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
 		ownerReferences = replicaSet.ObjectMeta.OwnerReferences
 		if len(ownerReferences) == 0 {
 			err = errors.New("ReplicaSet does not have an owner")
-			log.Println(err)
+			util.Println(err)
 			util.Error(w, err)
 			return
 		}
@@ -361,7 +375,7 @@ func ViewPodYamlHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		deploymentYAML, err := deploymentToYAML(deployment)
-		// log.Println(deploymentYAML)
+		// util.Println(deploymentYAML)
 		if err != nil {
 			fmt.Printf("Failed to convert deployment to YAML: %v", err)
 			util.Error(w, err)

@@ -100,3 +100,12 @@ export MANAGE_PASSWORD=1Fx98ksOa23GHapo0
 - [x] 支持文件夹压缩
 - [x] 支持文件下载
 - [x] 支持设置安全模式，可以定时更新登录token
+- [x] 增加k8s服务功能（基于RBAC角色权限控制）
+- [x] 服务功能查询所有命名空间
+- [x] 服务功能展示当前命名空间下的pod列表
+- [x] 服务功能中可对pod进行重启
+- [x] 服务功能中可查看pod对应deployment的yaml信息
+- [x] 服务功能中可查看pod对应的日志
+- [x] 服务功能中增加批量重启pod功能
+- [x] 服务功能中禁止重启kube-system命名空间和fm本身pod
+

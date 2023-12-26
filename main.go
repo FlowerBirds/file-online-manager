@@ -43,8 +43,8 @@ func main() {
 			return
 		}
 	}
-	log.Println("server manage root path: " + root)
-	log.Println("server use context path: " + contextPath)
+	util.Println("server manage root path: " + root)
+	util.Println("server use context path: " + contextPath)
 
 	initAuth()
 	// 增加拦截器
@@ -75,7 +75,7 @@ func main() {
 	router.HandleFunc(contextPath+"api/manager/k8s/view-pod-yaml", k8sservice.ViewPodYamlHandler).Methods("GET")
 
 	router.PathPrefix(contextPath + "").Handler(http.StripPrefix(contextPath, http.FileServer(http.Dir("./static/"))))
-	log.Println("server started at port 8080")
+	util.Println("server started at port 8080")
 	http.ListenAndServe(":8080", router)
 }
 
@@ -88,13 +88,13 @@ func initAuth() {
 	manageSecurity := os.Getenv("MANAGE_SECURITY")
 	if manageUsername == "" || manageSecurity == "true" || manageSecurity == "" {
 		loginUsername = util.GenToken(32)
-		log.Println("use security user: " + loginUsername)
+		util.Println("use security user: " + loginUsername)
 	} else {
 		loginUsername = manageUsername
 	}
 	if managePassword == "" || manageSecurity == "true" || manageSecurity == "" {
 		loginPassword = util.GenToken(128)
-		log.Println("use security token: " + loginPassword)
+		util.Println("use security token: " + loginPassword)
 	} else {
 		loginPassword = managePassword
 	}
@@ -112,9 +112,9 @@ func initAuth() {
 				case <-ticker.C:
 					// 更新token
 					loginUsername = util.GenToken(32)
-					log.Println("use security user: " + loginUsername)
+					util.Println("use security user: " + loginUsername)
 					loginPassword = util.GenToken(128)
-					log.Println("use security token: " + loginPassword)
+					util.Println("use security token: " + loginPassword)
 				}
 			}
 		}()
@@ -139,7 +139,7 @@ func authenticationMiddleware(next http.Handler) http.Handler {
 func accessLogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Path
-		log.Println("access uri:", uri)
+		util.Println("access uri:", uri)
 
 		// 继续执行下一个处理函数
 		next.ServeHTTP(w, r)
@@ -412,7 +412,7 @@ func zipFileHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(jsonResponse)
-		log.Println("zip failed", cmdErr)
+		util.Println("zip failed", cmdErr)
 		return
 	}
 
